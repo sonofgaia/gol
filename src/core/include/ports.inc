@@ -1,0 +1,3 @@
+;; APU
+APU_DMC_1         = $4010
+APU_FRAME_COUNTER = $4017
