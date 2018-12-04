@@ -77,9 +77,10 @@ _ppu_y_scroll_offset: .res 1
 .proc _ppu_write_scroll_offsets
     bit PPU_STATUS
 
-    lda _ppu_x_scroll_offset 
+    ;lda _ppu_x_scroll_offset 
+    lda #0
     sta PPU_SCROLL_OFFSETS
-    lda _ppu_y_scroll_offset
+    ;lda _ppu_y_scroll_offset
     sta PPU_SCROLL_OFFSETS
 
     rts

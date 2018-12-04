@@ -31,7 +31,7 @@ nes2end
 .word 0              ; IRQs not used at the moment
 
 .segment "CHARS"
-.incbin "chr/mario.chr"
+.incbin "chr/Alpha.chr"
 
 .segment "STARTUP"
 
