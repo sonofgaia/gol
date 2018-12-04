@@ -7,11 +7,12 @@ INCLUDES = -I /usr/local/share/cc65/asminc \
 		  -I src/core/include
 
 OBJ = build/obj/core/asm_gamepad.o \
-	  build/obj/core/asm_reset.o \
+	  build/obj/core/asm_init.o \
 	  build/obj/core/asm_ppu.o \
 	  build/obj/core/c_ppu.o \
 	  build/obj/c_main.o
 
+.SECONDARY:
 build/obj/core/asm_%.o: src/core/%.asm
 	ca65 $(INCLUDES) -v $< -g -o $@ 
 
@@ -30,7 +31,7 @@ build/obj/c_%.o: build/asm/c_%.s
 #all: bin/main.nes debug_syms
 all: build/bin/main.nes
 
-build/bin/main.nes: $(OBJ) /usr/local/share/cc65/lib/nes.lib
+build/bin/main.nes: $(OBJ) nes.lib
 	ld65 -Ln build/debug/main.labels.txt -C $(LINKER_CFG_FILE) --dbgfile build/debug/main.nes.dbg -m build/debug/main.map.txt -o build/bin/$(BINFILE) $^
 
 #debug_syms: bin/main.nes.0.nl bin/main.nes.1.nl bin/main.nes.ram.nl
