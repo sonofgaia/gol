@@ -1,6 +1,7 @@
 .include "zeropage.inc"
 
 .import   popptr1
+.import   popa
 .exportzp _ppu_control_reg1
 .exportzp _ppu_control_reg2
 .exportzp _ppu_x_scroll_offset
@@ -10,6 +11,7 @@
 .export   _ppu_vblank_wait
 .export   _ppu_set_rw_addr
 .export   _ppu_write
+.export   _ppu_write_byte
 .export   _ppu_write_scroll_offsets
 
 ;; CPU addresses linked to PPU usage
@@ -63,6 +65,7 @@ _ppu_y_scroll_offset: .res 1
 .proc _ppu_write
     tax                     ; X now contains number of bytes to write
     jsr popptr1             ; Pop 2 bytes from stack to ptr1
+
     ldy #0
 @byte_count_loop:
     lda (ptr1), y
@@ -74,13 +77,24 @@ _ppu_y_scroll_offset: .res 1
     rts
 .endproc
 
+.proc _ppu_write_byte
+    tax         ; X now contains number of bytes to write
+    jsr popa    ; A now contains the byte to write
+
+@byte_count_loop:
+    sta PPU_MEMORY_RW
+    dex
+    bne @byte_count_loop
+
+    rts
+.endproc
+
 .proc _ppu_write_scroll_offsets
     bit PPU_STATUS
 
-    ;lda _ppu_x_scroll_offset 
-    lda #0
+    lda _ppu_x_scroll_offset 
     sta PPU_SCROLL_OFFSETS
-    ;lda _ppu_y_scroll_offset
+    lda _ppu_y_scroll_offset
     sta PPU_SCROLL_OFFSETS
 
     rts

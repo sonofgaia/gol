@@ -29,6 +29,15 @@ extern void __fastcall__ ppu_write_control_reg2(void);
 #pragma zpsym ("ppu_control_reg1");
 #pragma zpsym ("ppu_control_reg2");
 
+#define PPU_BACKGROUND_PALETTE_ADDR (uint8_t*)0x3F00
+
+uint8_t* ppu_nametable_addrs[] = {
+    (uint8_t*)0x2000, // Nametable 0
+    (uint8_t*)0x2400, // Nametable 1
+    (uint8_t*)0x2800, // Nametable 2
+    (uint8_t*)0x2C00  // Nametable 3
+};
+
 void __fastcall__ ppu_set_nametable(nametable_t nametable)
 {
     ppu_control_reg1.nametable = nametable;
@@ -135,4 +144,23 @@ void __fastcall__ ppu_emphasize_colors(color_emphasis_t colors)
 {
     ppu_control_reg2.color_emphasis = colors;
     ppu_write_control_reg2();
+}
+
+void __fastcall__ ppu_set_background_palette(background_palette_t* palette)
+{
+    ppu_set_rw_addr(PPU_BACKGROUND_PALETTE_ADDR); 
+    ppu_write((uint8_t*)palette, sizeof(*palette));
+}
+
+void __fastcall__ ppu_clear_nametable(nametable_t nametable)
+{
+    uint8_t* nametable_addr = ppu_nametable_addrs[nametable];
+    int i;
+
+    ppu_set_rw_addr(nametable_addr);
+
+    // Clears all bytes for the nametable and it's corresponding attribute table.
+    for (i = 0; i < 8; i++) {
+        ppu_write_byte(0, 128);
+    }
 }

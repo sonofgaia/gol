@@ -62,9 +62,12 @@ void __fastcall__ ppu_enable_sprites(void);
 void __fastcall__ ppu_disable_sprites(void);
 void __fastcall__ ppu_emphasize_colors(color_emphasis_t colors);
 void __fastcall__ ppu_vblank_wait(void);
+void __fastcall__ ppu_set_background_palette(background_palette_t* palette);
+void __fastcall__ ppu_clear_nametable(nametable_t nametable);
 
 extern void __fastcall__ ppu_set_rw_addr(uint8_t* addr);
 extern void __fastcall__ ppu_write(uint8_t* addr, uint8_t nb_bytes);
+extern void __fastcall__ ppu_write_byte(uint8_t byte, uint8_t count);
 extern void __fastcall__ ppu_write_scroll_offsets(void);
 
 #endif

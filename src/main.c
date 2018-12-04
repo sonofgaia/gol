@@ -5,13 +5,9 @@ void setup_ppu(void);
 void enable_ppu(void);
 void disable_ppu(void);
 
-#define BACKGROUND_PALETTE (uint8_t*)0x3F00
-
 void main(void)
 {
-    uint8_t zero = 0;
-    uint8_t pattern = 0x55;
-    int i;
+    char message[] = "Hello world";
 
     background_palette_t background_palette = {
         {0x20,0x28,0x26,0xFF},
@@ -27,34 +23,14 @@ void main(void)
         {0x20,0x28,0x28,0x28}
     };
 
-    char message[] = "Hello world";
-
     setup_ppu();
 
-    ppu_set_rw_addr(BACKGROUND_PALETTE);
-    ppu_write((uint8_t*)&background_palette, sizeof(background_palette));
+    ppu_set_background_palette(&background_palette);
+    ppu_clear_nametable(NAMETABLE_0);
 
-    // Clear nametable 1
-    ppu_set_rw_addr((uint8_t*)0x2000);
-
-    // Copy tiles
-    for (i = 0; i < 960; i++) {
-        ppu_write(&zero, 1);
-    }
-
-    // Copy attribute table
-    for (i = 0; i < 64; i++) {
-        ppu_write(&zero, 1);
-    }
-    //ppu_set_rw_addr((uint8_t*)0x23C0);
-
-
+    // Write 'Hello World' in the middle of NAMETABLE_0
     ppu_set_rw_addr((uint8_t*)0x21CA);
-    ppu_write((uint8_t*)message, 11);
-    /*ppu_set_rw_addr((uint8_t*)0x2000);
-    for (i = 0; i < 64; i++) {
-        ppu_write(&zero, 1);
-    }*/
+    ppu_write((uint8_t*)message, sizeof(message));
 
     enable_ppu();
 
