@@ -7,7 +7,7 @@ typedef struct {
     uint16_t sprite_pattern_table :1;
     uint16_t screen_pattern_table :1;
     uint16_t sprite_size          :1;
-    uint16_t unused               :1;
+    uint16_t unused               :1; // Do not use, may damage original NES hardware
     uint16_t vblank_enable        :1;
 } ppu_control_reg1_t;
 
@@ -146,10 +146,10 @@ void __fastcall__ ppu_emphasize_colors(color_emphasis_t colors)
     ppu_write_control_reg2();
 }
 
-void __fastcall__ ppu_set_background_palette(background_palette_t* palette)
+void __fastcall__ ppu_set_background_palettes(background_palettes_t* palettes)
 {
     ppu_set_rw_addr(PPU_BACKGROUND_PALETTE_ADDR); 
-    ppu_write((uint8_t*)palette, sizeof(*palette));
+    ppu_write((uint8_t*)palettes, sizeof(background_palettes_t));
 }
 
 void __fastcall__ ppu_clear_nametable(nametable_t nametable)

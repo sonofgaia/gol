@@ -2,6 +2,7 @@
 #define _PPU_H_
 
 #include <stdint.h>
+#include "ppu_colors.h"
 
 typedef enum { 
     NAMETABLE_0,
@@ -40,8 +41,8 @@ struct grouped_palette_struct {
     palette_t palette_3;
 };
 
-typedef struct grouped_palette_struct background_palette_t;
-typedef struct grouped_palette_struct sprite_palette_t;
+typedef struct grouped_palette_struct background_palettes_t;
+typedef struct grouped_palette_struct sprite_palettes_t;
 
 void __fastcall__ ppu_set_nametable(nametable_t nametable);
 void __fastcall__ ppu_enable_vertical_write(void);
@@ -62,7 +63,7 @@ void __fastcall__ ppu_enable_sprites(void);
 void __fastcall__ ppu_disable_sprites(void);
 void __fastcall__ ppu_emphasize_colors(color_emphasis_t colors);
 void __fastcall__ ppu_vblank_wait(void);
-void __fastcall__ ppu_set_background_palette(background_palette_t* palette);
+void __fastcall__ ppu_set_background_palettes(background_palettes_t* palettes);
 void __fastcall__ ppu_clear_nametable(nametable_t nametable);
 
 extern void __fastcall__ ppu_set_rw_addr(uint8_t* addr);
