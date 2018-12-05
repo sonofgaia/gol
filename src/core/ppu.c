@@ -31,11 +31,20 @@ extern void __fastcall__ ppu_write_control_reg2(void);
 
 #define PPU_BACKGROUND_PALETTE_ADDR (uint8_t*)0x3F00
 
-uint8_t* ppu_nametable_addrs[] = {
-    (uint8_t*)0x2000, // Nametable 0
-    (uint8_t*)0x2400, // Nametable 1
-    (uint8_t*)0x2800, // Nametable 2
-    (uint8_t*)0x2C00  // Nametable 3
+#define SCREEN_WIDTH_PIXELS       256
+#define SCREEN_HEIGHT_PIXELS      240
+#define TILE_WIDTH_PIXELS         8
+#define TILE_HEIGHT_PIXELS        8
+#define SCREEN_WIDTH_TILES        (SCREEN_WIDTH_PIXELS / TILE_WIDTH_PIXELS)
+#define SCREEN_HEIGHT_TILES       (SCREEN_HEIGHT_PIXELS / TILE_WIDTH_PIXELS)
+#define BYTES_PER_NAMETABLE_ENTRY 1
+#define NAMETABLE_SIZE_BYTES      (SCREEN_WIDTH_TILES * SCREEN_HEIGHT_TILES * BYTES_PER_NAMETABLE_ENTRY)
+
+const uint8_t* const ppu_nametable_addrs[] = {
+    (const uint8_t*)0x2000, // Nametable 0
+    (const uint8_t*)0x2400, // Nametable 1
+    (const uint8_t*)0x2800, // Nametable 2
+    (const uint8_t*)0x2C00  // Nametable 3
 };
 
 void __fastcall__ ppu_set_nametable(nametable_t nametable)
@@ -154,7 +163,7 @@ void __fastcall__ ppu_set_background_palettes(background_palettes_t* palettes)
 
 void __fastcall__ ppu_clear_nametable(nametable_t nametable)
 {
-    uint8_t* nametable_addr = ppu_nametable_addrs[nametable];
+    uint8_t* nametable_addr = (uint8_t*)ppu_nametable_addrs[nametable];
     int i;
 
     ppu_set_rw_addr(nametable_addr);
@@ -163,4 +172,14 @@ void __fastcall__ ppu_clear_nametable(nametable_t nametable)
     for (i = 0; i < 8; i++) {
         ppu_write_byte(0, 128);
     }
+}
+
+void __fastcall__ ppu_set_rw_addr_by_nametable_coordinate(nametable_t nametable, uint8_t row, uint8_t col)
+{
+    uint8_t* nametable_addr = (uint8_t*)ppu_nametable_addrs[nametable];
+    uint8_t* addr;
+
+    addr = nametable_addr + row * SCREEN_WIDTH_TILES + col;
+
+    ppu_set_rw_addr(addr);
 }

@@ -75,7 +75,7 @@ nes2end
     lda	#>(__STACK_START__+__STACKSIZE__)
     sta	sp+1                ; Set the c stack pointer
 	
-    ;jsr	copydata            ; Initialize DATA segment
+    jsr	copydata            ; Initialize DATA segment
     jsr	initlib             ; Run constructors
 
     jsr _main               ; Call main()
