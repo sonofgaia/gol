@@ -1,7 +1,6 @@
-#include "grid.h"
 #include <stdio.h>
-
-#define ceil_div(x, y) (x + y - 1) / y
+#include "grid.h"
+#include "macros.h"
 
 // TV overscan 'title safe' area is 224x192 pixels.
 // That gives us an area of 28x24 tiles.
@@ -38,10 +37,8 @@ void /*__fastcall__*/ grid_buffer_swap(void)
 void /*__fastcall__*/ grid_set_cell(uint8_t col, uint8_t row, cell_status_t cell_status)
 {
     uint8_t *ptr = current_grid + GRID_ARR_BYTES_RESERVED_FOR_ROW; // We skip the array's first row (padding)
-    uint8_t skip_row_bytes;
-    uint8_t bit_to_read;
+    uint8_t skip_row_bytes, bit_to_read, arr_column;
     uint8_t bitmask = 0x80;
-    uint8_t arr_column;
 
     arr_column = col + 1; // First column of the array is skipped (padding)
 
@@ -64,45 +61,34 @@ void /*__fastcall__*/ grid_set_cell(uint8_t col, uint8_t row, cell_status_t cell
 void /*__fastcall__*/ grid_work(void)
 {
     uint8_t row_count, col_count;
-    uint8_t bitmask, living_cell, neighbor_count;
-    uint8_t *row_ptr = current_grid + GRID_ARR_BYTES_RESERVED_FOR_ROW; // We skip the array's first row (padding)
-    uint8_t *col_ptr;
-    uint8_t *work_grid_ptr;
+    uint8_t bitmask, cell_is_occupied, neighbor_count;
+    uint8_t *row_ptr, *col_ptr, *work_grid_ptr;
 
-    // Traverse 'current_grid' and populate 'work_grid' with it.
+    row_ptr = current_grid + GRID_ARR_BYTES_RESERVED_FOR_ROW; // We skip the array's first row (padding)
+
     for (row_count = 0; row_count < GRID_ROWS; row_count++) {
+        // Bitmask targets the second bit from the left since the first column of the row is skipped (padding).
+        bitmask = 0x40;
         col_ptr = row_ptr;
-        bitmask = 0x40; // First column of row is skipped (padding)
 
         for (col_count = 0; col_count < GRID_COLS; col_count++) {
-            living_cell = *col_ptr & bitmask;
+            cell_is_occupied = *col_ptr & bitmask;
             neighbor_count = grid_count_cell_neighbors(col_ptr, bitmask);    
 
-            if (living_cell) {
-                printf("1");
-            } else {
-                printf(" ");
-            }
-
-            // Get equivalent position pointer in work grid.
+            // Get a pointer to the same cell position in the work grid.
             work_grid_ptr = work_grid + (col_ptr - current_grid);
 
-            if (living_cell) {
-                // There is a cell here
+            // Apply the 3 basic rules of "Game Of Life"
+            if (cell_is_occupied) {
                 if (neighbor_count < 2 || neighbor_count > 3) {
-                    // Cell dies of overpopulation/underpopulation
                     *work_grid_ptr &= ~bitmask;
                 } else {
-                    // Cell remains alive
                     *work_grid_ptr |= bitmask;
                 }
             } else {
-                // Empty space
                 if (neighbor_count == 3) {
-                    // Create new cell here
                     *work_grid_ptr |= bitmask;
                 } else {
-                    // Space remains empty
                     *work_grid_ptr &= ~bitmask;
                 }
             }
@@ -115,11 +101,9 @@ void /*__fastcall__*/ grid_work(void)
                 col_ptr++;
             }
         }
-        printf("\n");
 
         row_ptr += GRID_ARR_BYTES_RESERVED_FOR_ROW;
     }
-    printf("\n");
 
     grid_buffer_swap(); // Work buffer now becomes our current grid.
 }
@@ -127,18 +111,18 @@ void /*__fastcall__*/ grid_work(void)
 uint8_t grid_count_cell_neighbors(uint8_t *ptr, uint8_t bitmask)
 {
     uint8_t *ptr_copy;
-    uint8_t neighbor_count = 0;
     uint8_t bitmask_copy;
+    uint8_t neighbor_count = 0;
 
     ptr_copy = ptr;
     bitmask_copy = bitmask;
 
     // Check cells above and below
     if (*(ptr - GRID_ARR_BYTES_RESERVED_FOR_ROW) & bitmask) {
-        neighbor_count++;
+        neighbor_count++; // Top cell is occupied
     }
     if (*(ptr + GRID_ARR_BYTES_RESERVED_FOR_ROW) & bitmask) {
-        neighbor_count++;
+        neighbor_count++; // Bottom cell is occupied
     }
 
     // Check cells on left side
@@ -149,23 +133,19 @@ uint8_t grid_count_cell_neighbors(uint8_t *ptr, uint8_t bitmask)
         ptr--;
     }
 
-    // Upper-left corner
     if (*(ptr - GRID_ARR_BYTES_RESERVED_FOR_ROW) & bitmask) {
-        neighbor_count++;
+        neighbor_count++; // Upper-left cell is occupied
     }
-    // Left
     if (*ptr & bitmask) {
-        neighbor_count++;
+        neighbor_count++; // Left cell is occupied
     }
-    // Lower-left corner
     if (*(ptr + GRID_ARR_BYTES_RESERVED_FOR_ROW) & bitmask) {
-        neighbor_count++;
+        neighbor_count++; // Lower-left cell is occupied
     }
-
-    ptr = ptr_copy;
-    bitmask = bitmask_copy;
 
     // Check cells on the right side
+    ptr = ptr_copy;
+    bitmask = bitmask_copy;
     bitmask = bitmask >> 1;
 
     if (!bitmask) {
@@ -173,17 +153,14 @@ uint8_t grid_count_cell_neighbors(uint8_t *ptr, uint8_t bitmask)
         ptr++;
     }
 
-    // Upper-right corner
     if (*(ptr - GRID_ARR_BYTES_RESERVED_FOR_ROW) & bitmask) {
-        neighbor_count++;
+        neighbor_count++; // Upper-right cell is occupied
     }
-    // Right
     if (*ptr & bitmask) {
-        neighbor_count++;
+        neighbor_count++; // Right cell is occupied
     }
-    // Lower-right corner
     if (*(ptr + GRID_ARR_BYTES_RESERVED_FOR_ROW) & bitmask) {
-        neighbor_count++;
+        neighbor_count++; // Lower-right cell is occupied
     }
 
     return neighbor_count;
