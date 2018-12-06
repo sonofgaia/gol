@@ -59,17 +59,16 @@ _oam: .res 256
 
     jsr _ppu_vblank_wait    ; First wait for vblank to make sure PPU is ready
 
-@clear_memory:
     lda #$00
+@clear_memory:
     sta $0000, x
     sta $0100, x
     sta $0200, x
+    sta $0300, x
     sta $0400, x
     sta $0500, x
     sta $0600, x
     sta $0700, x
-    lda #$FE
-    sta $0300, x
     inx
     bne @clear_memory
    

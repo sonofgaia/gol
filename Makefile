@@ -4,7 +4,8 @@ LIB_DIR=/usr/local/share/cc65/lib
 
 INCLUDES = -I /usr/local/share/cc65/asminc \
 		  -I /usr/local/share/cc65/include \
-		  -I src/core/include
+		  -I src/core/include \
+		  -I src
 
 OBJ = build/obj/core/asm_gamepad.o \
 	  build/obj/core/asm_init.o \
@@ -12,7 +13,8 @@ OBJ = build/obj/core/asm_gamepad.o \
 	  build/obj/core/asm_oam.o \
 	  build/obj/core/c_ppu.o \
 	  build/obj/core/c_oam.o \
-	  build/obj/c_main.o
+	  build/obj/c_main.o \
+	  build/obj/c_grid.o
 
 .SECONDARY:
 build/obj/core/asm_%.o: src/core/%.asm
