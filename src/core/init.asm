@@ -7,6 +7,7 @@
 .import _ppu_disable_screen
 .import _ppu_disable_vblank
 .import _ppu_vblank_wait
+.export _oam
 
 ; Startup code for cc65/ca65
 .export __STARTUP__:absolute=1
@@ -29,6 +30,10 @@ nes2end
 .word _nmi           ; Callback to handle NMI (non-maskable interrupt)
 .word _init          ; Callback to handle power on and reset (defined in "reset_handler.inc")
 .word 0              ; IRQs not used at the moment
+
+;; OAM
+.segment "OAM"
+_oam: .res 256
 
 .segment "CHARS"
 .incbin "chr/Alpha.chr"
