@@ -8,7 +8,7 @@ GAMEPAD2 = $4017
 
 NB_BUTTONS_PER_GAMEPAD = 8
 
-.segment "ZEROPAGE" : zeropage
+.segment "ZPVARS" : zeropage
 
 ;; Storage for player input
 _gamepad_p1_state: .res 1
