@@ -6,6 +6,7 @@
 .exportzp _ppu_control_reg2
 .exportzp _ppu_x_scroll_offset
 .exportzp _ppu_y_scroll_offset
+.exportzp _ppu_function_params
 .export   _ppu_write_control_reg1
 .export   _ppu_write_control_reg2
 .export   _ppu_vblank_wait
@@ -15,7 +16,6 @@
 .export   _ppu_write_scroll_offsets
 .export   _nmi_ppu_write
 .export   _nmi_ppu_write_byte
-.export   _ppu_function_params
 
 ;; CPU addresses linked to PPU usage
 PPU_CTRL1          = $2000

@@ -1,6 +1,8 @@
 .include "nes2header.inc"
 .include "zeropage.inc"
 .include "ports.inc"
+.include "nmi_task_list.inc"
+.include "lib.inc"
 
 .import _main
 .import _ppu_disable_sprites
@@ -8,13 +10,17 @@
 .import _ppu_disable_vblank
 .import _ppu_vblank_wait
 .import _oam_copy_to_ppu
-.export _oam
+.import _nmi_task_list
+.import _nmi_task_list_worker_index
+.import _nmi_task_list_load_current_task
+.import _nmi_task_list_increment_worker_index
 
 ; Startup code for cc65/ca65
 .export __STARTUP__:absolute=1
 .export _init, _exit
 .export _init_set_nmi_handler
 .export _nmi_handler
+.export _oam
 
 ; Linker generated symbols
 .import __STACK_START__, __STACKSIZE__
@@ -119,21 +125,52 @@ JMP_OPCODE = $4C
     rts
 .endproc
 
+.macro save_registers
+    pha     ; Save 'A'
+    txa
+    pha     ; Save 'X'
+    tya
+    pha     ; Save 'Y'
+.endmacro
+
+.macro restore_registers
+    pla
+    tay     ; Restore 'Y'
+    pla
+    tax     ; Restore 'X'
+    pla     ; Restore 'A'
+.endmacro
+
 .proc _nmi_handler
     SPRITE_0_Y_POS = _oam
+    task_ptr = _ptr1
 
-    pha
-    ;txa
-    ;pha ; Save registers A and X
+    save_registers
+
+@run_tasks:
+    jsr _nmi_task_list_load_current_task         ; Loads current task pointer into '_ptr1'.
+    ldy nmi_task::type
+    lda (task_ptr), y                            ; Task 'type' -> A
+    beq @tasks_done                              ; Branch to 'tasks_done' if task slot is empty.
+
+; Do actual work here
+
+    lda #0
+    ldy nmi_task::type
+    sta (task_ptr), y                            ; Clear task slot. (Set task 'type' to '0')
+
+    jsr _nmi_task_list_increment_worker_index    ; Go to next task.
+    jmp @run_tasks
+
+@tasks_done:
 
     inc SPRITE_0_Y_POS
 
     ; Test, move sprite #0 around a bit
     jsr _oam_copy_to_ppu
 
-    pla
-    ;tax
-    ;pla ; Restore registers
+@exit:
+    restore_registers
 
     rti
 .endproc

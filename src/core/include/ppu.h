@@ -4,6 +4,11 @@
 #include <stdint.h>
 #include "ppu_colors.h"
 
+#ifdef _DEBUG_
+  // We are compiling on a GNU/Linux host
+  #define __fastcall__
+#endif
+
 typedef enum { 
     NAMETABLE_0,
     NAMETABLE_1, 

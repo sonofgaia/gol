@@ -1,3 +1,4 @@
+#include "ppu.h"
 #include "grid.h"
 #include "macros.h"
 
@@ -10,6 +11,8 @@
 #define PADDING_COLS 3 // 2 bits on the left side, 1 bit on the right
 #define PADDING_ROWS 2 // 2 entirely unused rows (one at the top and one at the bottom)
 #define BITS_IN_BYTE 8
+#define CELL_COLS_PER_TILE 2
+#define CELL_ROWS_PER_TILE 2
 
 #define GRID_ARR_BYTES_RESERVED_FOR_ROW (ceil_div(GRID_COLS + PADDING_COLS, BITS_IN_BYTE))
 #define GRID_BUFFER_SIZE_BYTES (GRID_ARR_BYTES_RESERVED_FOR_ROW * (GRID_ROWS + PADDING_ROWS))
@@ -159,6 +162,59 @@ void __fastcall__ grid_apply_rules(void)
     }
 
     grid_buffer_swap(); // Work buffer now becomes our current grid.
+}
+
+void grid_copy_to_nametable(nametable_t nametable)
+{
+    uint8_t row_count, col_count;
+    uint8_t bitmask, bitmask_copy, tile_code;
+    uint8_t *row1_ptr, *row2_ptr, *col1_ptr, *col2_ptr;
+    uint8_t tile_row1_bits, tile_row2_bits;
+
+    row1_ptr = current_grid + GRID_ARR_BYTES_RESERVED_FOR_ROW; // We skip the array's first row (padding)
+    row2_ptr = row1_ptr + GRID_ARR_BYTES_RESERVED_FOR_ROW;
+
+    for (row_count = 0; row_count < GRID_ROWS; row_count += CELL_ROWS_PER_TILE) {
+        // Bitmask targets the third and fourth bit from the left since the two first columns of the row are skipped (padding).
+        bitmask = 0x30;
+        col1_ptr = row1_ptr;
+        col2_ptr = row2_ptr;
+
+        for (col_count = 0; col_count < GRID_COLS; col_count += CELL_COLS_PER_TILE) {
+            tile_row1_bits = *col1_ptr & bitmask;
+            tile_row2_bits = *col2_ptr & bitmask;
+
+            bitmask_copy = bitmask;
+
+            while (bitmask_copy != 0x03) {
+                tile_row1_bits = tile_row1_bits >> 2;
+                tile_row2_bits = tile_row2_bits >> 2;
+                bitmask_copy = bitmask_copy >> 2;
+            }
+
+            tile_code = tile_row1_bits | (tile_row2_bits << 2);
+
+#ifdef _DEBUG_
+            printf("%d,", tile_code);
+#endif
+            
+            bitmask = bitmask >> 2;
+
+            if (!bitmask) {
+                // Move on to next byte.
+                bitmask = 0xC0;
+                col1_ptr++;
+                col2_ptr++;
+            }
+        }
+
+#ifdef _DEBUG_
+        printf("\n");
+#endif
+
+        row1_ptr += GRID_ARR_BYTES_RESERVED_FOR_ROW * CELL_ROWS_PER_TILE;
+        row2_ptr = row1_ptr + GRID_ARR_BYTES_RESERVED_FOR_ROW;
+    }
 }
 
 #ifdef _DEBUG_

@@ -1,4 +1,5 @@
 #include "grid.h"
+#include "ppu.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <time.h>
@@ -22,6 +23,9 @@ int main(int argc, char** argv)
     grid_set_cell(22, 30, CELL_OCCUPIED);
     grid_set_cell(23, 30, CELL_OCCUPIED);
     grid_set_cell(24, 30, CELL_OCCUPIED);
+
+    grid_copy_to_nametable(NAMETABLE_0);
+    return 0;
 
     while (1) {
         grid_display_on_stdout('+', ' ');
