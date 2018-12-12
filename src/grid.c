@@ -59,12 +59,9 @@ void __fastcall__ grid_set_cell(uint8_t col, uint8_t row, cell_status_t cell_sta
 
 uint8_t __fastcall__ grid_count_cell_neighbors(uint8_t *ptr, uint8_t bitmask)
 {
-    uint8_t *ptr_copy;
-    uint8_t bitmask_copy;
+    uint8_t *ptr_copy = ptr;
+    uint8_t bitmask_copy = bitmask;
     uint8_t neighbor_count = 0;
-
-    ptr_copy = ptr;
-    bitmask_copy = bitmask;
 
     // Check cells above and below
     if (*(ptr - GRID_ARR_BYTES_RESERVED_FOR_ROW) & bitmask) {
@@ -117,11 +114,13 @@ uint8_t __fastcall__ grid_count_cell_neighbors(uint8_t *ptr, uint8_t bitmask)
 
 void __fastcall__ grid_apply_rules(void)
 {
-    uint8_t row_count, col_count;
-    uint8_t bitmask, cell_is_occupied, neighbor_count;
-    uint8_t *row_ptr, *col_ptr, *work_grid_ptr;
-
-    row_ptr = current_grid + GRID_ARR_BYTES_RESERVED_FOR_ROW; // We skip the array's first row (padding)
+    register uint8_t *col_ptr;
+    register uint8_t col_count;
+    register uint8_t bitmask;
+    register uint8_t cell_is_occupied, neighbor_count;
+    register uint8_t *work_grid_ptr;
+    uint8_t row_count;
+    uint8_t *row_ptr = current_grid + GRID_ARR_BYTES_RESERVED_FOR_ROW; // We skip the array's first row (padding)
 
     for (row_count = 0; row_count < GRID_ROWS; row_count++) {
         // Bitmask targets the third bit from the left since the two first columns of the row are skipped (padding).
@@ -169,18 +168,17 @@ void __fastcall__ grid_copy_to_nametable(nametable_t nametable)
 {
     uint8_t row_count, col_count;
     uint8_t bitmask, bitmask_copy, tile_code, task_index;
-    uint8_t *row1_ptr, *row2_ptr, *col1_ptr, *col2_ptr;
+    uint8_t *col1_ptr, *col2_ptr;
     uint8_t tile_row1_bits, tile_row2_bits;
     nmi_task_t task;
     uint8_t ppu_write_buf1[GRID_COLS / CELL_COLS_PER_TILE];
     uint8_t *p_buf;
     uint8_t cell_row = 0;
+    uint8_t *row1_ptr = current_grid + GRID_ARR_BYTES_RESERVED_FOR_ROW; // We skip the array's first row (padding)
+    uint8_t *row2_ptr = row1_ptr + GRID_ARR_BYTES_RESERVED_FOR_ROW;
 
     task.type = NMI_TASK_TYPE_PPU_DATA_COPY;
     task.params.ppu_data_copy.data_len = GRID_COLS / CELL_COLS_PER_TILE;
-
-    row1_ptr = current_grid + GRID_ARR_BYTES_RESERVED_FOR_ROW; // We skip the array's first row (padding)
-    row2_ptr = row1_ptr + GRID_ARR_BYTES_RESERVED_FOR_ROW;
 
     for (row_count = 0; row_count < GRID_ROWS; row_count += CELL_ROWS_PER_TILE) {
         // Bitmask targets the third and fourth bit from the left since the two first columns of the row are skipped (padding).

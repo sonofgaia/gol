@@ -24,10 +24,10 @@ build/obj/core/asm_%.o: src/core/%.asm
 	ca65 $(INCLUDES) $< -g -o $@ 
 
 build/asm/core/c_%.s: src/core/%.c
-	cc65 -Oi $(INCLUDES) $< -g -o $@ 
+	cc65 -Oir $(INCLUDES) $< -g -o $@ 
 
 build/asm/c_%.s: src/%.c
-	cc65 -Oi $(INCLUDES) $< -g -o $@ 
+	cc65 -Oir $(INCLUDES) $< -g -o $@ 
 
 build/obj/core/c_%.o: build/asm/core/c_%.s
 	ca65 $(INCLUDES) $< -g -o $@ 
