@@ -36,13 +36,13 @@ build/obj/c_%.o: build/asm/c_%.s
 	ca65 $(INCLUDES) $< -g -o $@ 
 
 #all: bin/main.nes debug_syms
-all: build/bin/main.nes build/bin/grid_test
+all: build/bin/main.nes
 
 build/bin/main.nes: $(OBJ) lib/nes.lib
 	ld65 -Ln build/debug/main.labels.txt -C $(LINKER_CFG_FILE) --dbgfile build/debug/main.nes.dbg -m build/debug/main.map.txt -o build/bin/$(BINFILE) $^
 
-build/bin/grid_test: src/tests/grid_test.c src/grid.c src/grid.h
-	gcc -D_DEBUG_ -I src -I src/core/include src/tests/grid_test.c src/grid.c -o build/bin/grid_test
+#build/bin/grid_test: src/tests/grid_test.c src/grid.c src/grid.h
+#	gcc -D_DEBUG_ -I src -I src/core/include src/tests/grid_test.c src/grid.c -o build/bin/grid_test
 
 #debug_syms: bin/main.nes.0.nl bin/main.nes.1.nl bin/main.nes.ram.nl
 

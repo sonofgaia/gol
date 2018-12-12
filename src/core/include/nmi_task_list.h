@@ -24,6 +24,6 @@ typedef struct {
 } nmi_task_t;
 
 uint8_t __fastcall__ nmi_task_list_add_task(nmi_task_t *task);
-void __fastcall__ nmi_task_list_wait(nmi_task_t *task);
+void __fastcall__ nmi_task_list_wait(uint8_t task_index);
 
 #endif

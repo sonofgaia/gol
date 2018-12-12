@@ -16,7 +16,7 @@ uint8_t __fastcall__ nmi_task_list_add_task(nmi_task_t *task)
     nmi_task_t *task_ptr = nmi_task_list + nmi_task_list_manager_index;
 
     // If task slot is still occupied, wait until NMI handler processes it.
-    nmi_task_list_wait(task_ptr);
+    nmi_task_list_wait(task_index);
 
     // Set task type and params (finish with 'type' - this is the field the NMI handler checks to see if a task was submitted.)
     memcpy(&task_ptr->params, &task->params, sizeof(nmi_task_params_t));
@@ -28,7 +28,9 @@ uint8_t __fastcall__ nmi_task_list_add_task(nmi_task_t *task)
 }
 
 // Waits for a given task to complete.
-void __fastcall__ nmi_task_list_wait(nmi_task_t *task)
+void __fastcall__ nmi_task_list_wait(uint8_t task_index)
 {
+    nmi_task_t *task = nmi_task_list + task_index;
+
     while (task->type != NMI_TASK_TYPE_NONE);
 }

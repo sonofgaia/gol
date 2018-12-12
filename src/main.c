@@ -2,6 +2,7 @@
 #include "gamepad.h"
 #include "ppu.h"
 #include "oam.h"
+#include "grid.h"
 
 void main(void)
 {
@@ -10,10 +11,10 @@ void main(void)
 
     // Initialize screen
     background_palettes_t background_palettes = {
-        {WHITE, MEDIUM|GRAY, LIGHT|RED, MEDIUM|RED}, // Palette 0
-        {WHITE, BLACK, LIGHT|RED, LIGHT|BLUE}, // Palette 1
-        {WHITE, BLACK, LIGHT|RED, LIGHT|BLUE}, // Palette 2
-        {WHITE, BLACK, LIGHT|RED, LIGHT|BLUE}  // Palette 3
+        {WHITE, GRAY, BLACK, MEDIUM|RED}, // Palette 0
+        {WHITE, GRAY, BLACK, LIGHT|BLUE}, // Palette 1
+        {WHITE, GRAY, BLACK, LIGHT|BLUE}, // Palette 2
+        {WHITE, GRAY, BLACK, LIGHT|BLUE}  // Palette 3
     };
 
     ppu_set_background_palettes(&background_palettes);
@@ -25,30 +26,30 @@ void main(void)
     ppu_set_rw_addr_by_nametable_coordinate(NAMETABLE_0, 14, 10);
     ppu_write((uint8_t*)message, sizeof(message));
 
-    sprite1 = oam_get_sprite_info(0);
-
-    sprite1->pos_x = 100;
-    sprite1->pos_y = 100;
-    sprite1->tile_number = 'T';
-    sprite1->attrs.vertical_flip = 0;
-    sprite1->attrs.horizontal_flip = 0;
-
-    sprite2 = oam_get_sprite_info(1);
-
-    sprite2->pos_x = 200;
-    sprite2->pos_y = 200;
-    sprite2->tile_number = 'R';
-    sprite2->attrs.vertical_flip = 0;
-    sprite2->attrs.horizontal_flip = 0;
-
     ppu_write_scroll_offsets();
 
     // Enable PPU
     // Enable NMI for handling vblanks.
     //init_set_nmi_handler(&nmi_handler);
+    grid_set_cell(20, 10, CELL_OCCUPIED);
+    grid_set_cell(21, 10, CELL_OCCUPIED);
+    grid_set_cell(21, 11, CELL_OCCUPIED);
+    grid_set_cell(22, 11, CELL_OCCUPIED);
+    grid_set_cell(22, 12, CELL_OCCUPIED);
+    grid_set_cell(23, 12, CELL_OCCUPIED);
+
+    grid_set_cell(20, 30, CELL_OCCUPIED);
+    grid_set_cell(21, 30, CELL_OCCUPIED);
+    grid_set_cell(22, 30, CELL_OCCUPIED);
+    grid_set_cell(23, 30, CELL_OCCUPIED);
+    grid_set_cell(24, 30, CELL_OCCUPIED);
+
     ppu_enable_vblank();
     ppu_enable_screen();
     ppu_enable_sprites();
 
-    while (1);
+    while (1) {
+        grid_apply_rules();
+        grid_copy_to_nametable(NAMETABLE_0);
+    }
 }

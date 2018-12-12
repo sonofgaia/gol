@@ -50,9 +50,9 @@ _nmi_task_list:
     sta _tmp1                       ; _tmp1 = '_nmi_task_list_worker_index' * 6 
 
     ; Save '_nmi_task_list' + offset bytes to '_ptr1'.
-    lda >_nmi_task_list
+    lda #>_nmi_task_list
     sta _ptr1+1                     ; Store high byte of '_ptr1'.
-    lda <_nmi_task_list
+    lda #<_nmi_task_list
     adc _tmp1
     sta _ptr1                       ; Store low byte of '_ptr1'.
     bcc @exit

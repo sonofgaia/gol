@@ -14,6 +14,10 @@
 .import _nmi_task_list_worker_index
 .import _nmi_task_list_load_current_task
 .import _nmi_task_list_increment_worker_index
+.import _nmi_ppu_write
+.import _ppu_set_rw_addr
+.import _ppu_write_scroll_offsets
+.importzp _ppu_function_params
 
 ; Startup code for cc65/ca65
 .export __STARTUP__:absolute=1
@@ -149,14 +153,32 @@ JMP_OPCODE = $4C
 
 @run_tasks:
     jsr _nmi_task_list_load_current_task         ; Loads current task pointer into '_ptr1'.
-    ldy nmi_task::type
+    ldy #nmi_task::type
     lda (task_ptr), y                            ; Task 'type' -> A
     beq @tasks_done                              ; Branch to 'tasks_done' if task slot is empty.
 
-; Do actual work here
+    ; Set PPU R/W Addr
+    ldy #nmi_task::dest_addr + 1
+    lda (task_ptr), y                            
+    tax                                          ; High byte 'dest_addr' -> X
+    dey
+    lda (task_ptr), y                            ; Low byte 'dest_addr' -> A
+    jsr _ppu_set_rw_addr
+
+    ; Call PPU write function
+    ldy #nmi_task::data
+    lda (task_ptr), y
+    sta _ppu_function_params
+    iny
+    lda (task_ptr), y
+    sta _ppu_function_params+1
+    ldy #nmi_task::data_len
+    lda (task_ptr), y
+    tax
+    jsr _nmi_ppu_write
 
     lda #0
-    ldy nmi_task::type
+    ldy #nmi_task::type
     sta (task_ptr), y                            ; Clear task slot. (Set task 'type' to '0')
 
     jsr _nmi_task_list_increment_worker_index    ; Go to next task.
@@ -166,8 +188,8 @@ JMP_OPCODE = $4C
 
     inc SPRITE_0_Y_POS
 
-    ; Test, move sprite #0 around a bit
     jsr _oam_copy_to_ppu
+    jsr _ppu_write_scroll_offsets
 
 @exit:
     restore_registers

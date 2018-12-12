@@ -1,6 +1,7 @@
 #include "ppu.h"
 #include "grid.h"
 #include "macros.h"
+#include "nmi_task_list.h"
 
 // TV overscan 'title safe' area is 224x192 pixels.
 // That gives us an area of 28x24 tiles.
@@ -164,12 +165,19 @@ void __fastcall__ grid_apply_rules(void)
     grid_buffer_swap(); // Work buffer now becomes our current grid.
 }
 
-void grid_copy_to_nametable(nametable_t nametable)
+void __fastcall__ grid_copy_to_nametable(nametable_t nametable)
 {
     uint8_t row_count, col_count;
-    uint8_t bitmask, bitmask_copy, tile_code;
+    uint8_t bitmask, bitmask_copy, tile_code, task_index;
     uint8_t *row1_ptr, *row2_ptr, *col1_ptr, *col2_ptr;
     uint8_t tile_row1_bits, tile_row2_bits;
+    nmi_task_t task;
+    uint8_t ppu_write_buf1[GRID_COLS / CELL_COLS_PER_TILE];
+    uint8_t *p_buf;
+    uint8_t cell_row = 0;
+
+    task.type = NMI_TASK_TYPE_PPU_DATA_COPY;
+    task.params.ppu_data_copy.data_len = GRID_COLS / CELL_COLS_PER_TILE;
 
     row1_ptr = current_grid + GRID_ARR_BYTES_RESERVED_FOR_ROW; // We skip the array's first row (padding)
     row2_ptr = row1_ptr + GRID_ARR_BYTES_RESERVED_FOR_ROW;
@@ -179,6 +187,7 @@ void grid_copy_to_nametable(nametable_t nametable)
         bitmask = 0x30;
         col1_ptr = row1_ptr;
         col2_ptr = row2_ptr;
+        p_buf = ppu_write_buf1;
 
         for (col_count = 0; col_count < GRID_COLS; col_count += CELL_COLS_PER_TILE) {
             tile_row1_bits = *col1_ptr & bitmask;
@@ -194,6 +203,9 @@ void grid_copy_to_nametable(nametable_t nametable)
 
             tile_code = tile_row1_bits | (tile_row2_bits << 2);
 
+            *p_buf = tile_code;
+            p_buf++;
+
 #ifdef _DEBUG_
             printf("%d,", tile_code);
 #endif
@@ -208,12 +220,19 @@ void grid_copy_to_nametable(nametable_t nametable)
             }
         }
 
+        task.params.ppu_data_copy.data = ppu_write_buf1;
+        task.params.ppu_data_copy.dest_addr = (uint8_t*)0x2063 + cell_row * 32;
+
+        task_index = nmi_task_list_add_task(&task);
+        nmi_task_list_wait(task_index);
+
 #ifdef _DEBUG_
         printf("\n");
 #endif
 
         row1_ptr += GRID_ARR_BYTES_RESERVED_FOR_ROW * CELL_ROWS_PER_TILE;
         row2_ptr = row1_ptr + GRID_ARR_BYTES_RESERVED_FOR_ROW;
+        cell_row++;
     }
 }
 

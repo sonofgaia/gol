@@ -13,5 +13,11 @@ NMI_TASK_TYPE_PPU_DATA_COPY = 1
 
 .struct nmi_task
     type   .byte
-    params .tag nmi_task_params_u
+    .union
+        .struct 
+            dest_addr .word
+            data      .word
+            data_len  .byte
+        .endstruct
+    .endunion
 .endstruct
