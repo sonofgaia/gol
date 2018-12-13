@@ -21,7 +21,7 @@
 static uint8_t grid_buffer1[GRID_BUFFER_SIZE_BYTES];
 static uint8_t grid_buffer2[GRID_BUFFER_SIZE_BYTES];
 
-static uint8_t *current_grid = grid_buffer1;
+uint8_t *current_grid = grid_buffer1;
 static uint8_t *work_grid    = grid_buffer2;
 
 void __fastcall__ grid_buffer_swap(void)
@@ -122,6 +122,8 @@ void __fastcall__ grid_apply_rules(void)
     uint8_t row_count;
     uint8_t *row_ptr = current_grid + GRID_ARR_BYTES_RESERVED_FOR_ROW; // We skip the array's first row (padding)
 
+    // onc_grid_init() ?
+
     for (row_count = 0; row_count < GRID_ROWS; row_count++) {
         // Bitmask targets the third bit from the left since the two first columns of the row are skipped (padding).
         bitmask = 0x20;
@@ -156,7 +158,11 @@ void __fastcall__ grid_apply_rules(void)
                 bitmask = 0x80;
                 col_ptr++;
             }
+
+            // onc_next_col() ?
         }
+
+        // onc_next_row() ?
 
         row_ptr += GRID_ARR_BYTES_RESERVED_FOR_ROW;
     }
