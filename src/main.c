@@ -4,6 +4,8 @@
 #include "oam.h"
 #include "grid.h"
 
+extern void onc_apply_rules(void);
+
 void main(void)
 {
     sprite_info_t *sprite1, *sprite2;
@@ -44,6 +46,10 @@ void main(void)
     grid_set_cell(23, 30, CELL_OCCUPIED);
     grid_set_cell(24, 30, CELL_OCCUPIED);
 */
+    //  X
+    //    X
+    // XX  XXX
+    // Cell (21, 25) is supposed to get 'created'
     grid_set_cell(20, 26, CELL_OCCUPIED);
     grid_set_cell(21, 26, CELL_OCCUPIED);
     grid_set_cell(24, 26, CELL_OCCUPIED);
@@ -60,6 +66,7 @@ void main(void)
 
     while (1) {
         grid_copy_to_nametable(NAMETABLE_0);
-        grid_apply_rules();
+        //grid_apply_rules();
+        onc_apply_rules();
     }
 }

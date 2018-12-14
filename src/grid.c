@@ -22,7 +22,7 @@ static uint8_t grid_buffer1[GRID_BUFFER_SIZE_BYTES];
 static uint8_t grid_buffer2[GRID_BUFFER_SIZE_BYTES];
 
 uint8_t *current_grid = grid_buffer1;
-static uint8_t *work_grid    = grid_buffer2;
+uint8_t *work_grid    = grid_buffer2;
 
 void __fastcall__ grid_buffer_swap(void)
 {
