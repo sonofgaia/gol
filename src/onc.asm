@@ -10,29 +10,34 @@
 .segment "ZPVARS" : zeropage
 
 ; We make use of a 3x3 grid
-_onc_cell_center:      .res 1
-_onc_cell_left:        .res 1
-_onc_cell_right:       .res 1
-_onc_cell_top:         .res 1
-_onc_cell_bottom:      .res 1
-_onc_cell_upper_left:  .res 1
-_onc_cell_upper_right: .res 1
-_onc_cell_lower_left:  .res 1
-_onc_cell_lower_right: .res 1
+_onc_cell_center:         .res 1
+_onc_cell_left:           .res 1
+_onc_cell_right:          .res 1
+_onc_cell_top:            .res 1
+_onc_cell_bottom:         .res 1
+_onc_cell_upper_left:     .res 1
+_onc_cell_upper_right:    .res 1
+_onc_cell_lower_left:     .res 1
+_onc_cell_lower_right:    .res 1
 
-_onc_bitmask:          .res 1
-_onc_bitmask2:         .res 1
-_onc_row1_ptr:         .res 2
-_onc_row2_ptr:         .res 2
-_onc_row3_ptr:         .res 2
-_onc_col1_ptr:         .res 2
-_onc_col2_ptr:         .res 2
-_onc_col3_ptr:         .res 2
-_onc_work_grid_ptr:    .res 2
-_onc_ptr_offset:       .res 2
+_onc_bitmask1:            .res 1
+_onc_bitmask2:            .res 1
+_onc_row1_ptr:            .res 2
+_onc_row2_ptr:            .res 2
+_onc_row3_ptr:            .res 2
+_onc_col1_ptr:            .res 2
+_onc_col2_ptr:            .res 2
+_onc_col3_ptr:            .res 2
+_onc_work_grid_ptr:       .res 2
+_onc_ptr_offset:          .res 2
 
-_onc_row_counter:      .res 1
-_onc_col_counter:      .res 1
+_onc_center_ptr:          .res 2
+_onc_center_bitmask:      .res 1
+_onc_next_center_ptr:     .res 2
+_onc_next_center_bitmask: .res 1
+
+_onc_row_counter:         .res 1
+_onc_col_counter:         .res 1
 
 .segment "CODE"
 
@@ -41,7 +46,7 @@ ONC_BYTES_PER_GRID_ROW = 8
 .proc _onc_init
     ; Set bitmask
     lda #$40 ; Leftmost column of array is padding
-    sta _onc_bitmask
+    sta _onc_bitmask1
 
     ; Init row and col pointers
     ldx _current_grid+1
@@ -70,7 +75,7 @@ ONC_BYTES_PER_GRID_ROW = 8
     ; Load values for first column
     ldy #0
     lda (_onc_col1_ptr), y
-    bit _onc_bitmask
+    bit _onc_bitmask1
     beq :+
         lda #1  ; Cell is occupied
         bne :++
@@ -80,7 +85,7 @@ ONC_BYTES_PER_GRID_ROW = 8
     sta _onc_cell_upper_left
 
     lda (_onc_col2_ptr), y
-    bit _onc_bitmask
+    bit _onc_bitmask1
     beq :+
         lda #1  ; Cell is occupied
         bne :++
@@ -90,7 +95,7 @@ ONC_BYTES_PER_GRID_ROW = 8
     sta _onc_cell_left
 
     lda (_onc_col3_ptr), y
-    bit _onc_bitmask
+    bit _onc_bitmask1
     beq :+
         lda #1  ; Cell is occupied
         bne :++
@@ -103,7 +108,7 @@ ONC_BYTES_PER_GRID_ROW = 8
 
     ; Load values for second column
     lda (_onc_col1_ptr), y
-    bit _onc_bitmask
+    bit _onc_bitmask1
     beq :+
         lda #1  ; Cell is occupied
         bne :++
@@ -113,7 +118,7 @@ ONC_BYTES_PER_GRID_ROW = 8
     sta _onc_cell_top
 
     lda (_onc_col2_ptr), y
-    bit _onc_bitmask
+    bit _onc_bitmask1
     beq :+
         lda #1  ; Cell is occupied
         bne :++
@@ -123,7 +128,7 @@ ONC_BYTES_PER_GRID_ROW = 8
     sta _onc_cell_center
 
     lda (_onc_col3_ptr), y
-    bit _onc_bitmask
+    bit _onc_bitmask1
     beq :+
         lda #1  ; Cell is occupied
         bne :++
@@ -132,13 +137,21 @@ ONC_BYTES_PER_GRID_ROW = 8
     :
     sta _onc_cell_bottom
 
+    ; Save center ptr and bitmask
+    lda _onc_bitmask1
+    sta _onc_center_bitmask
+    lda _onc_col2_ptr
+    sta _onc_center_ptr
+    lda _onc_col2_ptr+1
+    sta _onc_center_ptr+1
+
     jsr _onc_shift_bitmask
 
     rts
 .endproc
 
 .proc _onc_shift_bitmask
-    lsr _onc_bitmask
+    lsr _onc_bitmask1
     bcc @exit
     ; Bitmask has reached the next byte, increment col pointers and reset bitmask
     inc _onc_col1_ptr
@@ -154,7 +167,7 @@ ONC_BYTES_PER_GRID_ROW = 8
         inc _onc_col3_ptr+1
     :
     lda #$80
-    sta _onc_bitmask
+    sta _onc_bitmask1
 @exit:
     rts
 .endproc
@@ -164,7 +177,7 @@ ONC_BYTES_PER_GRID_ROW = 8
 
     ; Load values for third column
     lda (_onc_col1_ptr), y
-    bit _onc_bitmask
+    bit _onc_bitmask1
     beq :+
         lda #1  ; Cell is occupied
         bne :++
@@ -174,7 +187,7 @@ ONC_BYTES_PER_GRID_ROW = 8
     sta _onc_cell_upper_right
 
     lda (_onc_col2_ptr), y
-    bit _onc_bitmask
+    bit _onc_bitmask1
     beq :+
         lda #1  ; Cell is occupied
         bne :++
@@ -184,7 +197,7 @@ ONC_BYTES_PER_GRID_ROW = 8
     sta _onc_cell_right
 
     lda (_onc_col3_ptr), y
-    bit _onc_bitmask
+    bit _onc_bitmask1
     beq :+
         lda #1  ; Cell is occupied
         bne :++
@@ -192,6 +205,14 @@ ONC_BYTES_PER_GRID_ROW = 8
         lda #0  ; Cell is unoccupied
     :
     sta _onc_cell_lower_right
+
+    ; Save next center ptr and bitmask
+    lda _onc_bitmask1
+    sta _onc_next_center_bitmask
+    lda _onc_col2_ptr
+    sta _onc_next_center_ptr
+    lda _onc_col2_ptr+1
+    sta _onc_next_center_ptr+1
 
     jsr _onc_shift_bitmask
 
@@ -216,7 +237,7 @@ ONC_BYTES_PER_GRID_ROW = 8
 .proc _onc_next_row
     ; Set bitmask
     lda #$40            ; Leftmost column of array is padding
-    sta _onc_bitmask
+    sta _onc_bitmask1
 
     lda _onc_row2_ptr
     sta _onc_row1_ptr
@@ -242,7 +263,7 @@ ONC_BYTES_PER_GRID_ROW = 8
     ; Load values for first column
     ldy #0
     lda (_onc_col1_ptr), y
-    bit _onc_bitmask
+    bit _onc_bitmask1
     beq :+
         lda #1  ; Cell is occupied
         bne :++
@@ -252,7 +273,7 @@ ONC_BYTES_PER_GRID_ROW = 8
     sta _onc_cell_upper_left
 
     lda (_onc_col2_ptr), y
-    bit _onc_bitmask
+    bit _onc_bitmask1
     beq :+
         lda #1  ; Cell is occupied
         bne :++
@@ -262,7 +283,7 @@ ONC_BYTES_PER_GRID_ROW = 8
     sta _onc_cell_left
 
     lda (_onc_col3_ptr), y
-    bit _onc_bitmask
+    bit _onc_bitmask1
     beq :+
         lda #1  ; Cell is occupied
         bne :++
@@ -275,7 +296,7 @@ ONC_BYTES_PER_GRID_ROW = 8
 
     ; Load values for second column
     lda (_onc_col1_ptr), y
-    bit _onc_bitmask
+    bit _onc_bitmask1
     beq :+
         lda #1  ; Cell is occupied
         bne :++
@@ -285,7 +306,7 @@ ONC_BYTES_PER_GRID_ROW = 8
     sta _onc_cell_top
 
     lda (_onc_col2_ptr), y
-    bit _onc_bitmask
+    bit _onc_bitmask1
     beq :+
         lda #1  ; Cell is occupied
         bne :++
@@ -295,7 +316,7 @@ ONC_BYTES_PER_GRID_ROW = 8
     sta _onc_cell_center
 
     lda (_onc_col3_ptr), y
-    bit _onc_bitmask
+    bit _onc_bitmask1
     beq :+
         lda #1  ; Cell is occupied
         bne :++
@@ -304,6 +325,13 @@ ONC_BYTES_PER_GRID_ROW = 8
     :
     sta _onc_cell_bottom
 
+    ; Save center ptr and bitmask
+    lda _onc_bitmask1
+    sta _onc_center_bitmask
+    lda _onc_col2_ptr
+    sta _onc_center_ptr
+    lda _onc_col2_ptr+1
+    sta _onc_center_ptr+1
     jsr _onc_shift_bitmask
 
     rts
@@ -324,6 +352,14 @@ ONC_BYTES_PER_GRID_ROW = 8
     lda _onc_cell_lower_right
     sta _onc_cell_bottom
 
+    ; Set current center cell ptr and bitmask
+    lda _onc_next_center_bitmask
+    sta _onc_center_bitmask
+    lda _onc_next_center_ptr
+    sta _onc_center_ptr
+    lda _onc_next_center_ptr+1
+    sta _onc_center_ptr+1
+
     rts
 .endproc
 
@@ -331,11 +367,11 @@ ONC_BYTES_PER_GRID_ROW = 8
     tay ; Y now contains the number of neighbors
 
     ; Calculate the offset from _current_grid to the current center cell's byte.
-    lda _onc_col2_ptr
+    lda _onc_center_ptr
     sec
     sbc _current_grid
     sta _onc_ptr_offset
-    lda _onc_col2_ptr+1
+    lda _onc_center_ptr+1
     sbc _current_grid+1
     sta _onc_ptr_offset+1
 
@@ -358,7 +394,7 @@ ONC_BYTES_PER_GRID_ROW = 8
         beq @cell_survives
         @cell_dies:
             ; Cell dies (over or under population)
-            lda _onc_bitmask
+            lda _onc_center_bitmask
             eor #$FF
             sta _onc_bitmask2
             ldy #0
@@ -370,7 +406,7 @@ ONC_BYTES_PER_GRID_ROW = 8
             ; Cell survives (2 or 3 neighbors)
             ldy #0
             lda (_onc_work_grid_ptr), y
-            ora _onc_bitmask
+            ora _onc_center_bitmask
             sta (_onc_work_grid_ptr), y
             rts
     @center_cell_is_unoccupied:
@@ -381,12 +417,12 @@ ONC_BYTES_PER_GRID_ROW = 8
             ; New cell is created
             ldy #0
             lda (_onc_work_grid_ptr), y
-            ora _onc_bitmask
+            ora _onc_center_bitmask
             sta (_onc_work_grid_ptr), y
             rts
         @stays_unoccupied:
             ; Cell remains unoccupied
-            lda _onc_bitmask
+            lda _onc_center_bitmask
             eor #$FF
             sta _onc_bitmask2
             ldy #0
@@ -417,7 +453,7 @@ ONC_BYTES_PER_GRID_ROW = 8
         dec _onc_col_counter
         bne @col_loop
 
-    ; Last col of row stuff...
+    ; For last column of the row
     jsr _onc_load_new_cells
     jsr _onc_get_neighbor_count
     jsr _onc_update_work_grid_cell
