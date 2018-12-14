@@ -1,4 +1,5 @@
 .include "zeropage.inc"
+.include "ports.inc"
 
 .import   popptr1
 .import   popa
@@ -16,14 +17,6 @@
 .export   _ppu_write_scroll_offsets
 .export   _nmi_ppu_write
 .export   _nmi_ppu_write_byte
-
-;; CPU addresses linked to PPU usage
-PPU_CTRL1          = $2000
-PPU_CTRL2          = $2001
-PPU_STATUS         = $2002
-PPU_SCROLL_OFFSETS = $2005
-PPU_MEMORY_ADDR    = $2006
-PPU_MEMORY_RW      = $2007
 
 .segment "ZPVARS" : zeropage
 

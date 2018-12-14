@@ -17,6 +17,8 @@
 .import _nmi_ppu_write
 .import _ppu_set_rw_addr
 .import _ppu_write_scroll_offsets
+.import _ppu_write_control_reg1
+.importzp _ppu_control_reg1
 .importzp _ppu_function_params
 
 ; Startup code for cc65/ca65
@@ -157,6 +159,10 @@ JMP_OPCODE = $4C
     lda (task_ptr), y                            ; Task 'type' -> A
     beq @tasks_done                              ; Branch to 'tasks_done' if task slot is empty.
 
+    cmp #2 ; Nametable change
+    beq @change_nametable
+
+@ppu_copy:
     ; Set PPU R/W Addr
     ldy #nmi_task::dest_addr + 1
     lda (task_ptr), y                            
@@ -176,6 +182,24 @@ JMP_OPCODE = $4C
     lda (task_ptr), y
     tax
     jsr _nmi_ppu_write
+
+    lda #0
+    ldy #nmi_task::type
+    sta (task_ptr), y                            ; Clear task slot. (Set task 'type' to '0')
+
+    jsr _ppu_write_control_reg1
+
+    jsr _nmi_task_list_increment_worker_index    ; Go to next task.
+    jmp @run_tasks
+
+@change_nametable:
+    lda _ppu_control_reg1
+    and #$FC ; Clear first two bits
+    sta _ppu_control_reg1
+    ldy #nmi_task::nametable
+    lda (task_ptr), y
+    ora _ppu_control_reg1
+    sta _ppu_control_reg1
 
     lda #0
     ldy #nmi_task::type
