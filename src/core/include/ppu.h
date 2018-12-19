@@ -69,7 +69,7 @@ void __fastcall__ ppu_disable_sprites(void);
 void __fastcall__ ppu_emphasize_colors(color_emphasis_t colors);
 void __fastcall__ ppu_vblank_wait(void);
 void __fastcall__ ppu_set_background_palettes(background_palettes_t* palettes);
-void __fastcall__ ppu_clear_nametable(nametable_t nametable);
+void __fastcall__ ppu_clear_nametable(nametable_t nametable, uint8_t byte);
 void __fastcall__ ppu_set_rw_addr_by_nametable_coordinate(nametable_t nametable, uint8_t row, uint8_t col);
 
 extern void __fastcall__ ppu_set_rw_addr(uint8_t *addr);

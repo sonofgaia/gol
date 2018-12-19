@@ -12,12 +12,12 @@ typedef struct {
 } ppu_control_reg1_t;
 
 typedef struct {
-    uint16_t unused          :1;
-    uint16_t image_clipping  :1;
-    uint16_t sprite_clipping :1;
-    uint16_t screen_enable   :1;
-    uint16_t sprites_enable  :1;
-    uint16_t color_emphasis  :3;
+    uint16_t unused                  :1;
+    uint16_t image_clipping_disable  :1;
+    uint16_t sprite_clipping_disable :1;
+    uint16_t screen_enable           :1;
+    uint16_t sprites_enable          :1;
+    uint16_t color_emphasis          :3;
 } ppu_control_reg2_t;
 
 // Functions and data defined in 'ppu.asm'
@@ -103,25 +103,25 @@ void __fastcall__ ppu_disable_vblank(void)
 
 void __fastcall__ ppu_enable_image_clipping_in_leftmost_8px(void)
 {
-    ppu_control_reg2.image_clipping = 1;
+    ppu_control_reg2.image_clipping_disable = 0;
     ppu_write_control_reg2();
 }
 
 void __fastcall__ ppu_disable_image_clipping_in_leftmost_8px(void)
 {
-    ppu_control_reg2.image_clipping = 0;
+    ppu_control_reg2.image_clipping_disable = 1;
     ppu_write_control_reg2();
 }
 
 void __fastcall__ ppu_enable_sprite_clipping_in_leftmost_8px(void)
 {
-    ppu_control_reg2.sprite_clipping = 1;
+    ppu_control_reg2.sprite_clipping_disable = 0;
     ppu_write_control_reg2();
 }
 
 void __fastcall__ ppu_disable_sprite_clipping_in_leftmost_8px(void)
 {
-    ppu_control_reg2.sprite_clipping = 0;
+    ppu_control_reg2.sprite_clipping_disable = 1;
     ppu_write_control_reg2();
 }
 
@@ -161,7 +161,7 @@ void __fastcall__ ppu_set_background_palettes(background_palettes_t* palettes)
     ppu_write((uint8_t*)palettes, sizeof(background_palettes_t));
 }
 
-void __fastcall__ ppu_clear_nametable(nametable_t nametable)
+void __fastcall__ ppu_clear_nametable(nametable_t nametable, uint8_t byte)
 {
     uint8_t* nametable_addr = (uint8_t*)ppu_nametable_addrs[nametable];
     int i;
@@ -170,8 +170,10 @@ void __fastcall__ ppu_clear_nametable(nametable_t nametable)
 
     // Clears all bytes for the nametable and it's corresponding attribute table.
     for (i = 0; i < 8; i++) {
-        ppu_write_byte(0, 128);
+        ppu_write_byte(byte, 120);
     }
+
+    ppu_write_byte(0, 64);
 }
 
 void __fastcall__ ppu_set_rw_addr_by_nametable_coordinate(nametable_t nametable, uint8_t row, uint8_t col)
