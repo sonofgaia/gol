@@ -220,9 +220,8 @@ ONC_BYTES_PER_GRID_ROW = 8
 .endproc
 
 .proc _onc_get_neighbor_count
-    lda #0
     clc
-    adc _onc_cell_upper_left
+    lda _onc_cell_upper_left
     adc _onc_cell_left
     adc _onc_cell_lower_left
     adc _onc_cell_top
