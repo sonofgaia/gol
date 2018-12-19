@@ -50,18 +50,6 @@ build/debug/main.labels.txt: build/bin/main.nes
 build/bin/main.nes: $(OBJ) lib/nes.lib
 	ld65 -Ln build/debug/main.labels.txt -C $(LINKER_CFG_FILE) --dbgfile build/debug/main.nes.dbg -m build/debug/main.map.txt -o build/bin/$(BINFILE) $^
 
-#build/bin/grid_test: src/tests/grid_test.c src/grid.c src/grid.h
-#	gcc -D_DEBUG_ -I src -I src/core/include src/tests/grid_test.c src/grid.c -o build/bin/grid_test
-
-#debug_syms: bin/main.nes.0.nl bin/main.nes.1.nl bin/main.nes.ram.nl
-
-#bin/main.nes.ram.nl: debug/main.labels.txt
-#	python3 bin/main_fceux_symbols.py
-#bin/main.nes.0.nl: debug/main.labels.txt
-#	python3 bin/main_fceux_symbols.py
-#bin/main.nes.1.nl: debug/main.labels.txt
-#	python3 bin/main_fceux_symbols.py
-
 clean:
 	- rm -rf build/*
 	- mkdir -p build/debug
