@@ -42,7 +42,7 @@ nes2end
 
 ;; Vectors
 .segment "VECTORS"
-.addr _nmi_handler           ; Callback to handle NMI (non-maskable interrupt)
+.addr _nmi_handler   ; Callback to handle NMI (non-maskable interrupt)
 .addr _init          ; Callback to handle power on and reset (defined in "reset_handler.inc")
 .word 0              ; IRQs not used at the moment
 

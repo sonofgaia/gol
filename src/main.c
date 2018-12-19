@@ -45,7 +45,6 @@ void main(void)
     while (1) {
         grid_copy_to_nametable(NAMETABLE_0);
         onc_apply_rules();
-        //grid_apply_rules(); // Old algo
     }
 }
 
