@@ -12,8 +12,6 @@ void scenario2(void); // Defined at the end of this file
 void main(void)
 {
     char message[] = "Je t'aime Nico";
-    sprite_info_t *sprite1, *sprite2;
-    int i;
 
     // Initialize screen
     background_palettes_t background_palettes = {
@@ -29,14 +27,14 @@ void main(void)
     ppu_clear_nametable(NAMETABLE_0, 0);
     ppu_clear_nametable(NAMETABLE_2, 0);
 
-    // Write 'Hello World' in the middle of NAMETABLE_0
+    // Write 'message' string in the middle of NAMETABLE_0
     ppu_set_rw_addr_by_nametable_coordinate(NAMETABLE_0, 14, 10);
     ppu_write((uint8_t*)message, sizeof(message));
 
     ppu_write_scroll_offsets();
 
     //init_set_nmi_handler(&nmi_handler);
-    scenario1(); 
+    scenario2(); 
 
     ppu_enable_vblank();
     ppu_enable_screen();
