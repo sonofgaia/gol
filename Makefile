@@ -39,7 +39,6 @@ build/obj/core/c_%.o: build/asm/core/c_%.s
 build/obj/c_%.o: build/asm/c_%.s
 	ca65 $(INCLUDES) $< -g -o $@ 
 
-#all: bin/main.nes debug_syms
 all: build/bin/main.nes build/bin/main.nes.0.nl
 
 build/bin/main.nes.0.nl: build/bin/main.nes build/debug/main.labels.txt

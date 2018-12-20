@@ -36,11 +36,11 @@ void main(void)
     //init_set_nmi_handler(&nmi_handler);
     scenario2(); 
 
-    ppu_enable_vblank();
-    ppu_enable_screen();
-    ppu_enable_sprites();
     ppu_disable_image_clipping_in_leftmost_8px();
     ppu_disable_sprite_clipping_in_leftmost_8px();
+    ppu_enable_screen();
+    ppu_enable_sprites();
+    ppu_enable_vblank();
 
     while (1) {
         grid_copy_to_nametable(NAMETABLE_0);

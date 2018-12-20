@@ -1,6 +1,5 @@
-.export _gamepad_save_inputs
-.exportzp _gamepad_p1_state
-.exportzp _gamepad_p2_state
+.export   _gamepad_save_inputs
+.exportzp _gamepad_p1_state, _gamepad_p2_state
 
 ;; Ports linked to gamepad usage
 GAMEPAD1 = $4016
