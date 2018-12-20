@@ -42,7 +42,7 @@ build/obj/c_%.o: build/asm/c_%.s
 all: build/bin/main.nes build/bin/main.nes.0.nl
 
 build/bin/main.nes.0.nl: build/bin/main.nes build/debug/main.labels.txt
-	./create_nl.php > build/bin/main.nes.0.nl
+	./script/create_nl.php > build/bin/main.nes.0.nl
 
 build/debug/main.labels.txt: build/bin/main.nes
 
