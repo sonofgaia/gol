@@ -23,11 +23,11 @@ typedef struct {
 // Functions and data defined in 'ppu.asm'
 extern ppu_control_reg1_t ppu_control_reg1;
 extern ppu_control_reg2_t ppu_control_reg2;
-extern void __fastcall__ ppu_write_control_reg1(void);
-extern void __fastcall__ ppu_write_control_reg2(void);
-
 #pragma zpsym ("ppu_control_reg1");
 #pragma zpsym ("ppu_control_reg2");
+
+extern void __fastcall__ ppu_write_control_reg1(void);
+extern void __fastcall__ ppu_write_control_reg2(void);
 
 #define PPU_BACKGROUND_PALETTE_ADDR (uint8_t*)0x3F00
 

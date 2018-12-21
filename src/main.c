@@ -1,6 +1,8 @@
+#include <string.h>
 #include "init.h"
 #include "gamepad.h"
 #include "ppu.h"
+#include "mmc3.h"
 #include "oam.h"
 #include "grid.h"
 
@@ -13,14 +15,24 @@ void main(void)
 {
     char message[] = "Je t'aime Nico";
 
-    // Initialize screen
     background_palettes_t background_palettes = {
-        {WHITE, PALE|BLUE, BLACK, MEDIUM|RED}, // Palette 0
-        {WHITE, GRAY, BLACK, LIGHT|BLUE}, // Palette 1
-        {WHITE, GRAY, BLACK, LIGHT|BLUE}, // Palette 2
-        {WHITE, GRAY, BLACK, LIGHT|BLUE}  // Palette 3
+        {WHITE, PALE|BLUE, BLACK, MEDIUM|RED},  // Palette 0
+        {WHITE, GRAY, BLACK, LIGHT|BLUE},       // Palette 1
+        {WHITE, GRAY, BLACK, LIGHT|BLUE},       // Palette 2
+        {WHITE, GRAY, BLACK, LIGHT|BLUE}        // Palette 3
     };
 
+    // Initialize swappable ROM banks
+    mmc3_set_prg_bank_mode(PRG_ROM_BANK_MODE_0);
+    mmc3_set_chr_bank_mode(CHR_ROM_BANK_MODE_0);
+    mmc3_switch_bank(BANK_REG_2K_CHR_0, 0);
+    mmc3_switch_bank(BANK_REG_2K_CHR_1, 2);
+    mmc3_switch_bank(BANK_REG_1K_CHR_0, 4);
+    mmc3_switch_bank(BANK_REG_1K_CHR_1, 5);
+    mmc3_switch_bank(BANK_REG_1K_CHR_2, 6);
+    mmc3_switch_bank(BANK_REG_1K_CHR_3, 7);
+
+    // Initialize screen
     ppu_set_background_palettes(&background_palettes);
     ppu_set_screen_pattern_table(PATTERN_TABLE_1);     // Letters are in the second pattern table.
     ppu_set_sprite_pattern_table(PATTERN_TABLE_1);     // Letters are in the second pattern table.
@@ -29,7 +41,7 @@ void main(void)
 
     // Write 'message' string in the middle of NAMETABLE_0
     ppu_set_rw_addr_by_nametable_coordinate(NAMETABLE_0, 14, 10);
-    ppu_write((uint8_t*)message, sizeof(message));
+    ppu_write((uint8_t*)message, strlen(message));
 
     ppu_write_scroll_offsets();
 

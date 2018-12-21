@@ -18,6 +18,7 @@
 .import _ppu_set_rw_addr
 .import _ppu_write_scroll_offsets
 .import _ppu_write_control_reg1
+.import _mmc3_enable_prg_ram
 .importzp _ppu_control_reg1
 .importzp _ppu_function_params
 
@@ -33,9 +34,10 @@
 .import initlib, donelib, copydata
 
 ;; iNES 2.0 header
-nes2mapper  0       ; NROM, no bank swapping
-nes2prg     32768
-nes2chr     8192
+nes2mapper  4       ; MMC3
+nes2prg     524288
+nes2chr     262144
+nes2wram    8192
 nes2mirror  'H'
 nes2tv      'N'
 nes2end
@@ -57,18 +59,18 @@ _oam: .res 256
 
 ;; Run when powering on the console or resetting it.
 .proc _init
-    sei                     ; Disable IRQs
-    cld                     ; Disable decimal mode
+    sei                         ; Disable IRQs
+    cld                         ; Disable decimal mode
 
-    ldx #$40                ; Interrupt inhibit flag
-    stx APU_FRAME_COUNTER   ; Disable APU frame IRQ
+    ldx #$40                    ; Interrupt inhibit flag
+    stx APU_FRAME_COUNTER       ; Disable APU frame IRQ
     ldx #$FF
-    txs                     ; Set up stack
-    inx                     ; Now X = 0
+    txs                         ; Set up stack
+    inx                         ; Now X = 0
 
-    stx APU_DMC_1           ; Disable DMC IRQs
+    stx APU_DMC_1               ; Disable DMC IRQs
 
-    jsr _ppu_vblank_wait    ; First wait for vblank to make sure PPU is ready
+    jsr _ppu_vblank_wait        ; First wait for vblank to make sure PPU is ready
 
 @clear_memory:
     lda #$00
@@ -81,27 +83,29 @@ _oam: .res 256
     sta $0700, x
 
     lda #$EF
-    sta $0200, x            ; OAM is not initialized with #$00, that would create a bunch of garbage sprites at the top of the screen.
+    sta $0200, x                ; OAM is not initialized with #$00, that would create a bunch of garbage sprites at the top of the screen.
 
     inx
     bne @clear_memory
    
-    jsr _ppu_vblank_wait    ; Second wait for vblank, PPU is ready after this
+    jsr _ppu_vblank_wait        ; Second wait for vblank, PPU is ready after this
 
     jsr _ppu_disable_sprites
     jsr _ppu_disable_screen
     jsr _ppu_disable_vblank
 
+    jsr _mmc3_enable_prg_ram    ; Enable the MMC3's onboard RAM (8K, $6000-$7FFF)
+
 	lda #<(__STACK_START__+__STACKSIZE__)
     sta	sp
     lda	#>(__STACK_START__+__STACKSIZE__)
-    sta	sp+1                ; Set the c stack pointer
+    sta	sp+1                    ; Set the c stack pointer
 	
-    jsr	copydata            ; Initialize DATA segment
-    jsr	initlib             ; Run constructors
+    jsr	copydata                ; Initialize DATA segment
+    jsr	initlib                 ; Run constructors
 
-    jsr _main               ; Call main()
-    jmp _exit               ; Exited from main(), force a software break
+    jsr _main                   ; Call main()
+    jmp _exit                   ; Exited from main(), force a software break
 .endproc
 
 .proc _exit
