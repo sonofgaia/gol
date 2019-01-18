@@ -14,14 +14,24 @@ typedef struct {
 
 static mmc3_bank_select_t mmc3_bank_select;
 
-void __fastcall__ mmc3_set_prg_bank_mode(mmc3_prg_bank_mode_t prg_bank_mode)
+void __fastcall__ mmc3_set_prg_bank_mode_0(void)
 {
-    mmc3_bank_select.prg_bank_mode = prg_bank_mode;
+    mmc3_bank_select.prg_bank_mode = PRG_ROM_BANK_MODE_0;
 }
 
-void __fastcall__ mmc3_set_chr_bank_mode(mmc3_chr_bank_mode_t chr_bank_mode)
+void __fastcall__ mmc3_set_prg_bank_mode_1(void)
 {
-    mmc3_bank_select.chr_bank_mode = chr_bank_mode;
+    mmc3_bank_select.prg_bank_mode = PRG_ROM_BANK_MODE_1;
+}
+
+void __fastcall__ mmc3_set_chr_bank_mode_0(void)
+{
+    mmc3_bank_select.chr_bank_mode = CHR_ROM_BANK_MODE_0;
+}
+
+void __fastcall__ mmc3_set_chr_bank_mode_1(void)
+{
+    mmc3_bank_select.chr_bank_mode = CHR_ROM_BANK_MODE_1;
 }
 
 void __fastcall__ mmc3_switch_bank(mmc3_bank_reg_t bank_reg, uint8_t bank_num)
