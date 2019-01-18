@@ -12,7 +12,8 @@ typedef struct {
     uint16_t chr_bank_mode :1;
 } mmc3_bank_select_t;
 
-static mmc3_bank_select_t mmc3_bank_select;
+extern mmc3_bank_select_t mmc3_bank_select;
+#pragma zpsym("mmc3_bank_select");
 
 void __fastcall__ mmc3_set_prg_bank_mode_0(void)
 {
