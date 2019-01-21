@@ -46,7 +46,7 @@ _mmc3_bank_select: .res 1
 .endproc
 
 ;;-------------------------------------------------------------------------------------------------
-;; Routine : __mmc3_switch_bank (callable from ASM)
+;; Routine : __mmc3_switch_bank
 ;;-------------------------------------------------------------------------------------------------
 ;; Controls ROM bank switching with the MMC3 mapper.
 ;;
@@ -62,7 +62,7 @@ _mmc3_bank_select: .res 1
 .endproc
 
 ;;-------------------------------------------------------------------------------------------------
-;; Routine : __mmc3_switch_bank_mode_0 (callable from ASM)
+;; Routine : __mmc3_switch_bank_mode_0
 ;;-------------------------------------------------------------------------------------------------
 ;; Same functionality and parameters as '__mmc3_swith_bank'.
 ;; Is faster than __mmc3_switch_bank routine by assuming that "Mode 0" is used for both PRG and CHR banks.
