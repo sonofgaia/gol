@@ -34,7 +34,7 @@ _mmc3_bank_select: .res 1
     and #$F8
     sta bank_select_bitmask
     
-    ldy #$01
+    ldy #$00
     lda (sp), y
     ora bank_select_bitmask     ; 'A' now contains bank select byte
 
