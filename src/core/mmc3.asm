@@ -3,9 +3,13 @@
 .include "zeropage.inc"
 
 .exportzp _mmc3_bank_select
-.export   _mmc3_switch_bank
+.export   _mmc3_switch_bank                  ; For 'C' environment
+.export   __mmc3_switch_bank                 ; For ASM environment, outside NMI
+.export   __mmc3_switch_bank_mode_0          ; For ASM environment, outside NMI
+.export   __mmc3_switch_bank_from_nmi        ; For ASM environment, inside NMI
+.export   __mmc3_switch_bank_mode_0_from_nmi ; For ASM environment, inside NMI
 
-.import incsp2
+.import   incsp2
 
 .segment "ZPVARS" : zeropage
 
