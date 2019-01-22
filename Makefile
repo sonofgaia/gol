@@ -13,6 +13,7 @@ OBJ = build/obj/core/asm_gamepad.o \
 	  build/obj/core/asm_oam.o \
 	  build/obj/core/asm_lib.o \
 	  build/obj/core/asm_nmi_task_list.o \
+	  build/obj/core/asm_mmc3.o \
 	  build/obj/core/c_nmi_task_list.o \
 	  build/obj/core/c_ppu.o \
 	  build/obj/core/c_oam.o \

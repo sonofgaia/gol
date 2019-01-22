@@ -8,8 +8,8 @@ while ($line = fgets($labels_file))
         $symbol = $matches[2];
         $addr   = $matches[1];
         
-        if (substr($symbol, 0, 2) == '__') {
-            continue; // Skip symbols with a leading double underscore.
+        if (preg_match('/^__[A-Z]{1}/', $symbol)) {
+            continue; // Skip symbols with a leading double underscore followed by an upper-case letter.
         }
 
         echo "\${$addr}#{$symbol}#\n";
