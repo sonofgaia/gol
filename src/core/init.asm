@@ -55,6 +55,9 @@ _oam: .res 256
 .segment "CHARS"
 .incbin "chr/Alpha.chr"
 
+.segment "LOOKUP_TABLE"
+.incbin "build/bin/lookup_table.bin"
+
 .segment "STARTUP"
 
 ;; Run when powering on the console or resetting it.

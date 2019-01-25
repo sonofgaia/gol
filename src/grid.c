@@ -5,8 +5,8 @@
 
 #define GRID_COLS          64
 #define GRID_ROWS          60
-#define CELL_COLS_PER_TILE 2
-#define CELL_ROWS_PER_TILE 2
+#define CELL_COLS_PER_TILE  2
+#define CELL_ROWS_PER_TILE  2
 
 static uint8_t grid_buffer1[GRID_ROWS][GRID_COLS];
 static uint8_t grid_buffer2[GRID_ROWS][GRID_COLS];

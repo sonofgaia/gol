@@ -23,7 +23,12 @@ OBJ = build/obj/core/asm_gamepad.o \
 	  build/obj/asm_onc.o 
 
 .SECONDARY:
+all: build/bin/main.nes build/bin/main.nes.0.nl
+
 build/obj/core/asm_%.o: src/core/%.asm
+	ca65 $(INCLUDES) $< -g -o $@ 
+
+build/obj/core/asm_init.o: src/core/init.asm build/bin/lookup_table.bin
 	ca65 $(INCLUDES) $< -g -o $@ 
 
 build/obj/asm_%.o: src/%.asm
@@ -41,12 +46,13 @@ build/obj/core/c_%.o: build/asm/core/c_%.s
 build/obj/c_%.o: build/asm/c_%.s
 	ca65 $(INCLUDES) $< -g -o $@ 
 
-all: build/bin/main.nes build/bin/main.nes.0.nl
-
 build/bin/main.nes.0.nl: build/bin/main.nes build/debug/main.labels.txt
 	./script/create_nl.php > build/bin/main.nes.0.nl
 
 build/debug/main.labels.txt: build/bin/main.nes
+
+build/bin/lookup_table.bin: script/create_lookup_table.php
+	./script/create_lookup_table.php > build/bin/lookup_table.bin
 
 build/bin/main.nes: $(OBJ) lib/nes.lib
 	ld65 -Ln build/debug/main.labels.txt -C $(LINKER_CFG_FILE) --dbgfile build/debug/main.nes.dbg -m build/debug/main.map.txt -o build/bin/$(BINFILE) $^
