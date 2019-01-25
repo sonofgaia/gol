@@ -1,6 +1,6 @@
 #!/usr/bin/php
 <?php
-define('TABLE_KEY_BITS', 18);
+define('TABLE_KEY_BITS', 16);
 
 function table_keys_generator()
 {
@@ -42,17 +42,18 @@ function get_new_cell_values_for_key($key)
     $cv = get_cell_values_from_key($key);
 
     /**
-     *  0  1  2  3  4  5
-     *  6  7  8  9 10 11
-     * 12 13 14 15 16 17
+     *  0  1  2  3
+     *  4  5  6  7
+     *  8  9 10 11
+     * 12 13 14 15
      */
-    $neighborCount1 = $cv[0] + $cv[1] + $cv[2] + $cv[6] + $cv[8] + $cv[12] + $cv[13] + $cv[14];
-    $neighborCount2 = $cv[1] + $cv[2] + $cv[3] + $cv[7] + $cv[9] + $cv[13] + $cv[14] + $cv[15];
-    $neighborCount3 = $cv[2] + $cv[3] + $cv[4] + $cv[8] + $cv[10] + $cv[14] + $cv[15] + $cv[16];
-    $neighborCount4 = $cv[3] + $cv[4] + $cv[5] + $cv[9] + $cv[11] + $cv[15] + $cv[16] + $cv[17];
+    $neighborCount1 = $cv[0] + $cv[1] + $cv[2] + $cv[4] + $cv[6] + $cv[8] + $cv[9] + $cv[10];
+    $neighborCount2 = $cv[1] + $cv[2] + $cv[3] + $cv[5] + $cv[7] + $cv[9] + $cv[10] + $cv[11];
+    $neighborCount3 = $cv[4] + $cv[5] + $cv[6] + $cv[8] + $cv[10] + $cv[12] + $cv[13] + $cv[14];
+    $neighborCount4 = $cv[5] + $cv[6] + $cv[7] + $cv[9] + $cv[11] + $cv[13] + $cv[14] + $cv[15];
 
-    $newValue1 = get_new_cell_value($neighborCount1, $cv[7]);
-    $newValue2 = get_new_cell_value($neighborCount2, $cv[8]);
+    $newValue1 = get_new_cell_value($neighborCount1, $cv[5]);
+    $newValue2 = get_new_cell_value($neighborCount2, $cv[6]);
     $newValue3 = get_new_cell_value($neighborCount3, $cv[9]);
     $newValue4 = get_new_cell_value($neighborCount4, $cv[10]);
 
