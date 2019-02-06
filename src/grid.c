@@ -7,11 +7,15 @@
 #define GRID_ROWS          60
 #define CELL_COLS_PER_TILE  2
 #define CELL_ROWS_PER_TILE  2
+#define PADDING_COLS        2
+#define PADDING_ROWS        2
+#define BYTES_WIDTH         (GRID_COLS + PADDING_COLS)
+#define BYTES_HEIGHT        (GRID_ROWS + PADDING_ROWS)
 
-static uint8_t grid_buffer1[GRID_ROWS][GRID_COLS];
-static uint8_t grid_buffer2[GRID_ROWS][GRID_COLS];
+static uint8_t grid_buffer1[BYTES_HEIGHT][BYTES_WIDTH];
+static uint8_t grid_buffer2[BYTES_HEIGHT][BYTES_WIDTH];
 
-typedef uint8_t life_grid_row_t[GRID_COLS];
+typedef uint8_t life_grid_row_t[BYTES_WIDTH];
 
 life_grid_row_t *current_grid = grid_buffer1;
 life_grid_row_t *work_grid    = grid_buffer2;
