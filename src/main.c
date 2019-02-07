@@ -6,7 +6,7 @@
 #include "oam.h"
 #include "grid.h"
 
-extern void onc_apply_rules(void);
+extern void life_apply_rules(void);
 
 void scenario1(void); // Defined at the end of this file
 void scenario2(void); // Defined at the end of this file
@@ -56,7 +56,7 @@ void main(void)
 
     while (1) {
         grid_copy_to_nametable(NAMETABLE_0);
-        onc_apply_rules();
+        //life_apply_rules();
     }
 }
 

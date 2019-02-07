@@ -42,22 +42,22 @@ function get_new_cell_values_for_key($key)
     $cv = get_cell_values_from_key($key);
 
     /**
-     *  0  1  2  3
-     *  4  5  6  7
-     *  8  9 10 11
-     * 12 13 14 15
+     * 15 11 07 03
+     * 14 10 06 02
+     * 13 09 05 01
+     * 12 08 04 00
      */
-    $neighborCount1 = $cv[0] + $cv[1] + $cv[2] + $cv[4] + $cv[6] + $cv[8] + $cv[9] + $cv[10];
-    $neighborCount2 = $cv[1] + $cv[2] + $cv[3] + $cv[5] + $cv[7] + $cv[9] + $cv[10] + $cv[11];
-    $neighborCount3 = $cv[4] + $cv[5] + $cv[6] + $cv[8] + $cv[10] + $cv[12] + $cv[13] + $cv[14];
-    $neighborCount4 = $cv[5] + $cv[6] + $cv[7] + $cv[9] + $cv[11] + $cv[13] + $cv[14] + $cv[15];
+    $neighborCount1 = $cv[5] + $cv[6] + $cv[7] + $cv[9] + $cv[11] + $cv[13] + $cv[14] + $cv[15];
+    $neighborCount2 = $cv[4] + $cv[5] + $cv[6] + $cv[8] + $cv[10] + $cv[12] + $cv[13] + $cv[14];
+    $neighborCount3 = $cv[1] + $cv[2] + $cv[3] + $cv[5] + $cv[7] + $cv[9] + $cv[10] + $cv[11];
+    $neighborCount4 = $cv[0] + $cv[1] + $cv[2] + $cv[4] + $cv[6] + $cv[8] + $cv[9] + $cv[10];
 
-    $newValue1 = get_new_cell_value($neighborCount1, $cv[5]);
-    $newValue2 = get_new_cell_value($neighborCount2, $cv[6]);
-    $newValue3 = get_new_cell_value($neighborCount3, $cv[9]);
-    $newValue4 = get_new_cell_value($neighborCount4, $cv[10]);
+    $newValue1 = get_new_cell_value($neighborCount4, $cv[10]);
+    $newValue2 = get_new_cell_value($neighborCount3, $cv[9]);
+    $newValue3 = get_new_cell_value($neighborCount2, $cv[6]);
+    $newValue4 = get_new_cell_value($neighborCount1, $cv[5]);
 
-    return $newValue4 | ($newValue3 << 1) | ($newValue2 << 2) | ($newValue1 << 3);
+    return $newValue1 | ($newValue2 << 1) | ($newValue3 << 2) | ($newValue4 << 3);
 }
 
 $fp = fopen('php://stdout', 'w+');

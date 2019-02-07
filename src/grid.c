@@ -36,19 +36,15 @@ void __fastcall__ grid_set_cell(uint8_t col, uint8_t row, cell_status_t cell_sta
 
 void __fastcall__ grid_copy_to_nametable(nametable_t nametable)
 {
-    return;
-
-    /*uint8_t row_count, col_count;
-    uint8_t bitmask, bitmask_copy, tile_code, task_index;
-    uint8_t *col1_ptr, *col2_ptr;
-    uint8_t tile_row1_bits, tile_row2_bits;
+    uint8_t row_count, col_count;
+    uint8_t tile_code, task_index;
     nmi_task_t task;
     uint8_t ppu_write_buf1[GRID_COLS / CELL_COLS_PER_TILE];
     uint8_t ppu_write_buf2[GRID_COLS / CELL_COLS_PER_TILE];
-    uint8_t *p_buf;
+    uint8_t *p_buf, *p_buf_copy;
     uint8_t cell_row = 0;
-    uint8_t *row1_ptr = current_grid + GRID_ARR_BYTES_RESERVED_FOR_ROW; // We skip the array's first row (padding)
-    uint8_t *row2_ptr = row1_ptr + GRID_ARR_BYTES_RESERVED_FOR_ROW;
+    life_grid_row_t *row1_ptr = current_grid;
+    life_grid_row_t *row2_ptr = row1_ptr + 1;
     static nametable_t current_nametable = NAMETABLE_0;
     nmi_task_t task2;
 
@@ -58,38 +54,20 @@ void __fastcall__ grid_copy_to_nametable(nametable_t nametable)
 
     task2.type = NMI_TASK_TYPE_CHANGE_NAMETABLE;
 
-    p_buf = ppu_write_buf1;
+    p_buf = p_buf_copy = ppu_write_buf1;
 
     for (row_count = 0; row_count < GRID_ROWS; row_count += CELL_ROWS_PER_TILE) {
-        // Bitmask targets the third and fourth bit from the left since the two first columns of the row are skipped (padding).
-        bitmask = 0x30;
-        col1_ptr = row1_ptr;
-        col2_ptr = row2_ptr;
 
-        for (col_count = 0; col_count < GRID_COLS; col_count += CELL_COLS_PER_TILE) {
-            tile_row1_bits = *col1_ptr & bitmask;
-            tile_row2_bits = *col2_ptr & bitmask;
+        for (col_count = 1; col_count <= GRID_COLS; col_count += CELL_COLS_PER_TILE) {
+            tile_code = (
+                    ((*row1_ptr)[col_count])
+                    | ((*row1_ptr)[col_count + 1] << 1)
+                    | ((*row2_ptr)[col_count] << 2)
+                    | ((*row2_ptr)[col_count + 1] << 3)
+            );
 
-            bitmask_copy = bitmask;
-
-            while (bitmask_copy != 0x03) {
-                tile_row1_bits = tile_row1_bits >> 2;
-                tile_row2_bits = tile_row2_bits >> 2;
-                bitmask_copy = bitmask_copy >> 2;
-            }
-
-            tile_code = tile_row1_bits | (tile_row2_bits << 2);
-
-            p_buf[col_count >> 1] = tile_code;
-
-            bitmask = bitmask >> 2;
-
-            if (!bitmask) {
-                // Move on to next byte.
-                bitmask = 0xC0;
-                col1_ptr++;
-                col2_ptr++;
-            }
+            *p_buf_copy = tile_code;
+            p_buf_copy++;
         }
 
         task.params.ppu_data_copy.data = p_buf;
@@ -107,15 +85,15 @@ void __fastcall__ grid_copy_to_nametable(nametable_t nametable)
             nmi_task_list_wait(task_index);
         }
 
-        row1_ptr += GRID_ARR_BYTES_RESERVED_FOR_ROW * CELL_ROWS_PER_TILE;
-        row2_ptr = row1_ptr + GRID_ARR_BYTES_RESERVED_FOR_ROW;
+        row1_ptr += CELL_ROWS_PER_TILE;
+        row2_ptr = row1_ptr + 1;
         cell_row++;
 
         // Switch buffer
         if (p_buf == ppu_write_buf1) {
-            p_buf = ppu_write_buf2;
+            p_buf = p_buf_copy = ppu_write_buf2;
         } else {
-            p_buf = ppu_write_buf1;
+            p_buf = p_buf_copy = ppu_write_buf1;
         }
     }
 
@@ -128,5 +106,5 @@ void __fastcall__ grid_copy_to_nametable(nametable_t nametable)
     }
 
     task_index = nmi_task_list_add_task(&task2);
-    nmi_task_list_wait(task_index);*/
+    nmi_task_list_wait(task_index);
 }
