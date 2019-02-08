@@ -52,10 +52,10 @@ function get_new_cell_values_for_key($key)
     $neighborCount3 = $cv[1] + $cv[2] + $cv[3] + $cv[5] + $cv[7] + $cv[9] + $cv[10] + $cv[11];
     $neighborCount4 = $cv[0] + $cv[1] + $cv[2] + $cv[4] + $cv[6] + $cv[8] + $cv[9] + $cv[10];
 
-    $newValue1 = get_new_cell_value($neighborCount4, $cv[10]);
-    $newValue2 = get_new_cell_value($neighborCount3, $cv[9]);
-    $newValue3 = get_new_cell_value($neighborCount2, $cv[6]);
-    $newValue4 = get_new_cell_value($neighborCount1, $cv[5]);
+    $newValue1 = get_new_cell_value($neighborCount1, $cv[10]);
+    $newValue2 = get_new_cell_value($neighborCount2, $cv[9]);
+    $newValue3 = get_new_cell_value($neighborCount3, $cv[6]);
+    $newValue4 = get_new_cell_value($neighborCount4, $cv[5]);
 
     return $newValue1 | ($newValue2 << 1) | ($newValue3 << 2) | ($newValue4 << 3);
 }

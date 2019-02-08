@@ -31,7 +31,7 @@ void __fastcall__ grid_buffer_swap(void)
 
 void __fastcall__ grid_set_cell(uint8_t col, uint8_t row, cell_status_t cell_status)
 {
-    current_grid[row][col] = cell_status;
+    current_grid[row+1][col+1] = cell_status;
 }
 
 void __fastcall__ grid_copy_to_nametable(nametable_t nametable)
@@ -60,10 +60,10 @@ void __fastcall__ grid_copy_to_nametable(nametable_t nametable)
 
         for (col_count = 1; col_count <= GRID_COLS; col_count += CELL_COLS_PER_TILE) {
             tile_code = (
-                    ((*row1_ptr)[col_count])
-                    | ((*row1_ptr)[col_count + 1] << 1)
-                    | ((*row2_ptr)[col_count] << 2)
-                    | ((*row2_ptr)[col_count + 1] << 3)
+                    ((*row1_ptr)[col_count] << 1)
+                    | ((*row1_ptr)[col_count + 1])
+                    | ((*row2_ptr)[col_count] << 3)
+                    | ((*row2_ptr)[col_count + 1] << 2)
             );
 
             *p_buf_copy = tile_code;
