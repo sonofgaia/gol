@@ -20,23 +20,23 @@ _gamepad_p2_state: .res 1
     lda #$01
     sta GAMEPAD1
     lda #$00
-    sta GAMEPAD1            ; Reset the button latch
+    sta GAMEPAD1                ; Reset the button latch
 
     ldx #NB_BUTTONS_PER_GAMEPAD
-@read_gamepad1_button:
-    lda GAMEPAD1
-    lsr                     ; Acc. Bit 0 -> Carry flag
-    rol _gamepad_p1_state   ; Carry flag -> _gamepad_p1_state
-    dex
-    bne @read_gamepad1_button
+    @read_gamepad1_button:
+        lda GAMEPAD1
+        lsr                     ; Acc. Bit 0 -> Carry flag
+        rol _gamepad_p1_state   ; Carry flag -> _gamepad_p1_state
+        dex
+        bne @read_gamepad1_button
 
     ldx #NB_BUTTONS_PER_GAMEPAD
-@read_gamepad2_button:
-    lda GAMEPAD2
-    lsr                     ; Acc. Bit 0 -> Carry flag
-    rol _gamepad_p2_state   ; Carry flag -> _gamepad_p2_state
-    dex
-    bne @read_gamepad2_button
+    @read_gamepad2_button:
+        lda GAMEPAD2
+        lsr                     ; Acc. Bit 0 -> Carry flag
+        rol _gamepad_p2_state   ; Carry flag -> _gamepad_p2_state
+        dex
+        bne @read_gamepad2_button
 
     rts
 .endproc
