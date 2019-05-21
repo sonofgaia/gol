@@ -32,6 +32,9 @@ _life_work_grid_row2_ptr: .res 2
 _life_row_counter: .res 1
 _life_col_counter: .res 1
 
+.segment "LOOKUP_TABLE"
+.incbin "build/bin/lookup_table.bin"
+
 .segment "CODE"
 
 ;;-------------------------------------------------------------------------------------------------
