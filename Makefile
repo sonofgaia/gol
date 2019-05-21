@@ -29,7 +29,7 @@ all: build/bin/main.nes build/bin/main.nes.0.nl build/bin/lookup_table_test
 build/obj/core/asm_%.o: src/core/%.asm
 	ca65 $(INCLUDES) $< -g -o $@ 
 
-build/obj/core/asm_init.o: src/core/init.asm build/bin/lookup_table.bin
+build/obj/asm_life.o: src/life.asm build/bin/lookup_table.bin
 	ca65 $(INCLUDES) $< -g -o $@ 
 
 build/obj/asm_%.o: src/%.asm
