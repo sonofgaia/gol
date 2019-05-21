@@ -34,7 +34,7 @@ void __fastcall__ grid_set_cell(uint8_t col, uint8_t row, cell_status_t cell_sta
     current_grid[row+1][col+1] = cell_status;
 }
 
-void __fastcall__ grid_copy_to_nametable(nametable_t nametable)
+void __fastcall__ grid_copy_to_nametable(void)
 {
     uint8_t row_count, col_count;
     uint8_t tile_code, task_index;
@@ -45,7 +45,7 @@ void __fastcall__ grid_copy_to_nametable(nametable_t nametable)
     uint8_t cell_row = 0;
     life_grid_row_t *row1_ptr = current_grid;
     life_grid_row_t *row2_ptr = row1_ptr + 1;
-    static nametable_t current_nametable = NAMETABLE_0;
+    static nametable_t current_nametable = NAMETABLE_2;
     nmi_task_t task2;
 
 
