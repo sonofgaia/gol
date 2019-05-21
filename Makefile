@@ -24,7 +24,7 @@ OBJ = build/obj/core/asm_gamepad.o \
 	  build/obj/asm_life.o
 
 .SECONDARY:
-all: build/bin/main.nes build/bin/main.nes.0.nl
+all: build/bin/main.nes build/bin/main.nes.0.nl build/bin/lookup_table_test
 
 build/obj/core/asm_%.o: src/core/%.asm
 	ca65 $(INCLUDES) $< -g -o $@ 
@@ -64,3 +64,7 @@ clean:
 	- mkdir -p build/bin
 	- mkdir -p build/obj/core
 	- mkdir -p build/asm/core
+
+build/bin/lookup_table_test: tests/lookup_table_test.c
+	gcc tests/lookup_table_test.c -o build/bin/lookup_table_test
+

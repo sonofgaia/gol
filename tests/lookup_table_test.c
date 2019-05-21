@@ -4,46 +4,98 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-void load_cells_for_key(uint32_t key, bool *arr);
-bool get_new_cell_value(uint8_t neighbor_count, bool old_value);
-uint8_t get_new_cell_values_for_key(uint32_t key);
-void display_results(uint32_t key, uint8_t values);
+#define LOOKUP_TABLE_SIZE_BYTES 65536
+#define LOOKUP_TABLE_FILE_PATH  "./lookup_table.bin"
 
-bool cells[16];
-uint8_t lookup_table[65536];
+struct lookup_key_cells_struct {
+    uint16_t c00 :1;
+    uint16_t c01 :1;
+    uint16_t c02 :1;
+    uint16_t c03 :1;
+    uint16_t c04 :1;
+    uint16_t c05 :1;
+    uint16_t c06 :1;
+    uint16_t c07 :1;
+    uint16_t c08 :1;
+    uint16_t c09 :1;
+    uint16_t c10 :1;
+    uint16_t c11 :1;
+    uint16_t c12 :1;
+    uint16_t c13 :1;
+    uint16_t c14 :1;
+    uint16_t c15 :1;
+};
+
+typedef union {
+    uint32_t value;
+    struct lookup_key_cells_struct cells;
+} lookup_key_t;
+
+struct lookup_result_cells_struct {
+    uint8_t upper_left  :1;
+    uint8_t lower_left  :1;
+    uint8_t upper_right :1;
+    uint8_t lower_right :1;
+    uint8_t unused      :4;
+};
+
+typedef union {
+    uint8_t value;
+    struct lookup_result_cells_struct cells;
+} lookup_result_t;
+
+void lookup_result_init(lookup_result_t *result)
+{
+    result->value = 0;
+}
+
+typedef lookup_result_t lookup_table_t[LOOKUP_TABLE_SIZE_BYTES]; 
+
+bool lookup_table_load(const char *path, lookup_table_t *table_buf);
+bool get_new_cell_value(uint8_t neighbor_count, bool old_value);
+lookup_result_t get_new_cell_values_for_key(lookup_key_t key);
+void display_results(lookup_key_t key, lookup_result_t values);
+
 
 int main(int argc, char **argv)
 {
-    uint32_t key;
-    uint32_t last_key = (uint32_t)(pow(2, 16) - 1);
-    uint8_t new_values, lookup_values;
-    FILE *fp;
+    lookup_table_t  lookup_table;
+    lookup_key_t    key, last_key;
+    lookup_result_t calculated_result, lookup_result;
 
-    fp = fopen("../build/bin/lookup_table.bin", "r");
-    fread(lookup_table, 65536, 1, fp);
-    fclose(fp);
+    last_key.value = pow(2, 16) - 1;
 
-    for (key = 0; key <= last_key; key++) {
-        new_values = get_new_cell_values_for_key(key);
-        lookup_values = lookup_table[key];
+    lookup_table_load(LOOKUP_TABLE_FILE_PATH, &lookup_table);
 
-        if (new_values != lookup_values) {
-            printf("Lookup table is corrupted\n");
-            exit(1);
+    for (key.value = 0; key.value <= last_key.value; key.value++) {
+        lookup_result     = lookup_table[key.value];
+        calculated_result = get_new_cell_values_for_key(key);
+
+        if (calculated_result.value != lookup_result.value) {
+            printf("%d != %d\n", calculated_result.value, lookup_result.value);
+            printf("Calculated :\n");
+            display_results(key, calculated_result);
+            printf("Lookup     :\n");
+            display_results(key, lookup_result);
+
+            return -1;
         }
-
-        display_results(key, new_values);
     }
 
-    printf("All good\n");
-    exit(0);
+    printf("Lookup table file is valid\n");
+
+    return 0;
 }
 
-void load_cells_for_key(uint32_t key, bool *arr)
+bool lookup_table_load(const char *path, lookup_table_t *table_buf)
 {
-    for (int i = 0; i < 16; i++) {
-        arr[i] = (key >> i) & 0x1;
-    }
+    FILE *fp;
+
+    fp = fopen(path, "r");
+    fread(table_buf, LOOKUP_TABLE_SIZE_BYTES, 1, fp);
+    fclose(fp);
+
+    return true;
 }
 
 bool get_new_cell_value(uint8_t neighbor_count, bool old_value)
@@ -61,9 +113,13 @@ bool get_new_cell_value(uint8_t neighbor_count, bool old_value)
         return false;
 }
 
-uint8_t get_new_cell_values_for_key(uint32_t key)
+lookup_result_t get_new_cell_values_for_key(lookup_key_t key)
 {
-    load_cells_for_key(key, cells);
+    lookup_result_t result;
+    uint8_t neighbor_count1, neighbor_count2, neighbor_count3, neighbor_count4;
+    struct lookup_key_cells_struct *c = &key.cells;
+
+    lookup_result_init(&result);
 
     /**
      * 15 11 07 03
@@ -71,32 +127,27 @@ uint8_t get_new_cell_values_for_key(uint32_t key)
      * 13 09 05 01
      * 12 08 04 00
      */
-    uint8_t neighbor_count1 = cells[5] + cells[6] + cells[7] + cells[9] + cells[11] + cells[13] + cells[14] + cells[15];
-    uint8_t neighbor_count2 = cells[4] + cells[5] + cells[6] + cells[8] + cells[10] + cells[12] + cells[13] + cells[14];
-    uint8_t neighbor_count3 = cells[1] + cells[2] + cells[3] + cells[5] + cells[7] + cells[9] + cells[10] + cells[11];
-    uint8_t neighbor_count4 = cells[0] + cells[1] + cells[2] + cells[4] + cells[6] + cells[8] + cells[9] + cells[10];
+    neighbor_count1 = c->c05 + c->c06 + c->c07 + c->c09 + c->c11 + c->c13 + c->c14 + c->c15;
+    neighbor_count2 = c->c04 + c->c05 + c->c06 + c->c08 + c->c10 + c->c12 + c->c13 + c->c14;
+    neighbor_count3 = c->c01 + c->c02 + c->c03 + c->c05 + c->c07 + c->c09 + c->c10 + c->c11;
+    neighbor_count4 = c->c00 + c->c01 + c->c02 + c->c04 + c->c06 + c->c08 + c->c09 + c->c10;
 
-    bool new_value1 = get_new_cell_value(neighbor_count1, cells[10]);
-    bool new_value2 = get_new_cell_value(neighbor_count2, cells[9]);
-    bool new_value3 = get_new_cell_value(neighbor_count3, cells[6]);
-    bool new_value4 = get_new_cell_value(neighbor_count4, cells[5]);
+    result.cells.upper_left  = get_new_cell_value(neighbor_count1, c->c10);
+    result.cells.lower_left  = get_new_cell_value(neighbor_count2, c->c09);
+    result.cells.upper_right = get_new_cell_value(neighbor_count3, c->c06);
+    result.cells.lower_right = get_new_cell_value(neighbor_count4, c->c05);
 
-    return new_value1 | (new_value2 << 1) | (new_value3 << 2) | (new_value4 << 3);
+    return result;
 }
 
 
-void display_results(uint32_t key, uint8_t values)
+void display_results(lookup_key_t key, lookup_result_t result)
 {
-    load_cells_for_key(key, cells);
-    uint8_t v1, v2, v3, v4;
-
-    v1 = values & 0x1;
-    v2 = (values >> 1) & 0x1;
-    v3 = (values >> 2) & 0x1;
-    v4 = (values >> 3) & 0x1;
+    struct lookup_key_cells_struct    *k = &key.cells;
+    struct lookup_result_cells_struct *r = &result.cells;
     
-    printf("%i %i %i %i\n", cells[15], cells[11], cells[7], cells[3]);
-    printf("%i %i %i %i        => %i %i\n", cells[14], cells[10], cells[6], cells[2], v1, v3);
-    printf("%i %i %i %i           %i %i\n", cells[13], cells[9], cells[5], cells[1], v2, v4);
-    printf("%i %i %i %i\n\n", cells[12], cells[8], cells[4], cells[0]);
+    printf("%i %i %i %i           \n", k->c15, k->c11, k->c07, k->c03);
+    printf("%i %i %i %i   => %i %i\n", k->c14, k->c10, k->c06, k->c02, r->upper_left, r->upper_right);
+    printf("%i %i %i %i      %i %i\n", k->c13, k->c09, k->c05, k->c01, r->lower_left, r->lower_right);
+    printf("%i %i %i %i         \n\n", k->c12, k->c08, k->c04, k->c00);
 }
