@@ -20,7 +20,6 @@ OBJ = build/obj/core/asm_gamepad.o \
 	  build/obj/core/c_mmc3.o \
 	  build/obj/c_main.o \
 	  build/obj/c_grid.o \
-	  build/obj/asm_onc.o \
 	  build/obj/asm_life.o
 
 .SECONDARY:
