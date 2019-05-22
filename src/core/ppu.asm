@@ -98,11 +98,11 @@ _ppu_function_params: .res 2 ; Pass function params through this memory space.
 ;;     Byte count    (passed through X register)
 ;;
 .proc _nmi_ppu_write
-    PTR = _ppu_function_params
+    ptr = _ppu_function_params
 
     ldy #0
 @byte_count_loop:
-    lda (PTR), y
+    lda (ptr), y
     sta PPU_MEMORY_RW
     iny
     dex
