@@ -275,21 +275,19 @@ _life_col_counter: .res 1
     @assign_new_fourth_cell_value:
         sta (_life_work_grid_row2_ptr), y
 
-    iny ; Restore column index
-
     rts
 .endproc
 
 .proc _life_apply_rules
     ; We traverse the array and calculate the results in batches of 2x2 cells.
     ; This gives us 32 batches horizontally and 30 batches vertically.
-    lda #32
+    lda #30
     sta _life_row_counter
 
     jsr _life_init              ; Init life grid row pointers
 
 @row_loop:
-    lda #30
+    lda #32
     sta _life_col_counter
 
     ldy #0                      ; Set column index

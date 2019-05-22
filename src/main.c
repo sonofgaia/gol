@@ -28,13 +28,9 @@ void main(void)
     
     enable_video();             // Display screen and sprites.
 
-    //life_apply_rules();
-    delay();                    // Short pause before displaying the grid.
-    grid_copy_to_nametable();
-
     while (1) {
-        //grid_copy_to_nametable(NAMETABLE_0);
-        //life_apply_rules();
+        grid_copy_to_nametable();
+        life_apply_rules();
     }
 }
 

@@ -56,7 +56,7 @@ void __fastcall__ grid_copy_to_nametable(void)
 
     p_buf = p_buf_copy = ppu_write_buf1;
 
-    for (row_count = 0; row_count < GRID_ROWS; row_count += CELL_ROWS_PER_TILE) {
+    for (row_count = 0; row_count < (GRID_ROWS-2); row_count += CELL_ROWS_PER_TILE) {
 
         for (col_count = 1; col_count <= GRID_COLS; col_count += CELL_COLS_PER_TILE) {
             tile_code = (
@@ -73,10 +73,10 @@ void __fastcall__ grid_copy_to_nametable(void)
         task.params.ppu_data_copy.data = p_buf;
         if (current_nametable == NAMETABLE_0) {
             // Our current nametable is 0, so we write to nametable 2
-            task.params.ppu_data_copy.dest_addr = (uint8_t*)0x2863 + cell_row * 32;
+            task.params.ppu_data_copy.dest_addr = (uint8_t*)0x2820+ cell_row * 32;
         } else {
             // Our current nametable is 2, so we write to nametable 0
-            task.params.ppu_data_copy.dest_addr = (uint8_t*)0x2063 + cell_row * 32;
+            task.params.ppu_data_copy.dest_addr = (uint8_t*)0x2020 + cell_row * 32;
         }
 
         task_index = nmi_task_list_add_task(&task);
