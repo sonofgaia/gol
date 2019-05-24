@@ -5,7 +5,7 @@
 
 // PPU copy buffer can accomodate up to 3 lines of tiles.
 #define PPU_COPY_BUFFER_SIZE_BYTES (PPU_SCREEN_NB_HORIZONTAL_TILES * 3)
-#define PPU_COPY_BUFFER_FLUSH_BYTES 56
+#define PPU_COPY_BUFFER_FLUSH_BYTES 80
 
 static uint8_t ppu_copy_buffer[PPU_COPY_BUFFER_SIZE_BYTES] = {}; // Initialize so that it is stored in the "DATA" segment.
 static uint8_t ppu_copy_buffer_write_index = 0;
