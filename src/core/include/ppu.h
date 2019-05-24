@@ -4,10 +4,8 @@
 #include <stdint.h>
 #include "ppu_colors.h"
 
-#ifdef _DEBUG_
-  // We are compiling on a GNU/Linux host
-  #define __fastcall__
-#endif
+#define PPU_SCREEN_NB_HORIZONTAL_TILES 32
+#define PPU_SCREEN_NB_VERTICAL_TILES   30
 
 typedef enum { 
     NAMETABLE_0,
@@ -76,5 +74,7 @@ extern void __fastcall__ ppu_set_rw_addr(uint8_t *addr);
 extern void __fastcall__ ppu_write(uint8_t *addr, uint8_t nb_bytes);
 extern void __fastcall__ ppu_write_byte(uint8_t byte, uint8_t count);
 extern void __fastcall__ ppu_write_scroll_offsets(void);
+
+extern const uint8_t* const ppu_nametable_addrs[];
 
 #endif

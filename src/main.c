@@ -5,8 +5,7 @@
 #include "mmc3.h"
 #include "oam.h"
 #include "grid.h"
-
-extern void life_apply_rules(void);
+#include "lookup_table_algo.h"
 
 void init_swappable_rom_banks(void);
 void init_video(void);
@@ -29,8 +28,8 @@ void main(void)
     enable_video();             // Display screen and sprites.
 
     while (1) {
-        grid_copy_to_nametable();
-        life_apply_rules();
+        //grid_copy_to_nametable();
+        lta_display_next_generation();
     }
 }
 

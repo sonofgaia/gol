@@ -20,7 +20,8 @@ OBJ = build/obj/core/asm_gamepad.o \
 	  build/obj/core/c_mmc3.o \
 	  build/obj/c_main.o \
 	  build/obj/c_grid.o \
-	  build/obj/asm_life.o
+	  build/obj/c_grid_draw.o \
+	  build/obj/asm_lookup_table_algo.o
 
 .SECONDARY:
 all: build/bin/main.nes build/bin/main.nes.0.nl build/bin/lookup_table_test
@@ -28,7 +29,7 @@ all: build/bin/main.nes build/bin/main.nes.0.nl build/bin/lookup_table_test
 build/obj/core/asm_%.o: src/core/%.asm
 	ca65 $(INCLUDES) $< -g -o $@ 
 
-build/obj/asm_life.o: src/life.asm build/bin/lookup_table.bin
+build/obj/asm_lookup_table_algo.o: src/lookup_table_algo.asm build/bin/lookup_table.bin
 	ca65 $(INCLUDES) $< -g -o $@ 
 
 build/obj/asm_%.o: src/%.asm

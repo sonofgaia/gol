@@ -11,3 +11,6 @@ _ptr1: .res 2
 _ptr2: .res 2
 _ptr3: .res 2
 _ptr4: .res 2
+
+; Space to save registers (before function call, etc.)
+regs: .res 6
