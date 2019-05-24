@@ -35,7 +35,7 @@
 
 ;; iNES 2.0 header
 nes2mapper  4       ; MMC3
-nes2prg     81920
+nes2prg     131072
 nes2chr     8192
 nes2wram    8192
 nes2mirror  'H'
