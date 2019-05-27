@@ -6,15 +6,13 @@
 #include "oam.h"
 #include "grid.h"
 #include "lookup_table_algo.h"
+#include "scenarios.h"
 
 void init_swappable_rom_banks(void);
 void init_video(void);
 void enable_video(void);
 void write_message_to_screen(void);
 void delay(void);
-
-void set_grid_scenario1(void);
-void set_grid_scenario2(void);
 
 void main(void)
 {
@@ -23,12 +21,11 @@ void main(void)
 
     write_message_to_screen();  // Writes a string message to the video memory.
     
-    set_grid_scenario1(); 
+    scenarios__load(scenario_01);
     
     enable_video();             // Display screen and sprites.
 
     while (1) {
-        //grid_copy_to_nametable();
         lta_display_next_generation();
     }
 }
@@ -86,31 +83,4 @@ void delay(void)
     uint16_t i;
 
     for (i = 0; i < 40000; i++);
-}
-
-void set_grid_scenario1(void)
-{
-    grid_set_cell(20, 26, CELL_OCCUPIED);
-    grid_set_cell(21, 26, CELL_OCCUPIED);
-    grid_set_cell(24, 26, CELL_OCCUPIED);
-    grid_set_cell(25, 26, CELL_OCCUPIED);
-    grid_set_cell(26, 26, CELL_OCCUPIED);
-    grid_set_cell(21, 24, CELL_OCCUPIED);
-    grid_set_cell(23, 25, CELL_OCCUPIED);
-}
-
-void set_grid_scenario2(void)
-{
-    grid_set_cell(20, 10, CELL_OCCUPIED);
-    grid_set_cell(21, 10, CELL_OCCUPIED);
-    grid_set_cell(21, 11, CELL_OCCUPIED);
-    grid_set_cell(22, 11, CELL_OCCUPIED);
-    grid_set_cell(22, 12, CELL_OCCUPIED);
-    grid_set_cell(23, 12, CELL_OCCUPIED);
-
-    grid_set_cell(20, 30, CELL_OCCUPIED);
-    grid_set_cell(21, 30, CELL_OCCUPIED);
-    grid_set_cell(22, 30, CELL_OCCUPIED);
-    grid_set_cell(23, 30, CELL_OCCUPIED);
-    grid_set_cell(24, 30, CELL_OCCUPIED);
 }

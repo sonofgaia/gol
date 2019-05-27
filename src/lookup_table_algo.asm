@@ -128,7 +128,6 @@ _lta_row_counter: .res 1
     lookup_table_bank_num = tmp1
     lookup_table_ptr      = ptr1
     column_index          = tmp2
-    store_acc             = tmp3
 
     lda #0
     sta lookup_table_bank_num
@@ -228,58 +227,38 @@ _lta_row_counter: .res 1
 
     ; Store new first cell value
     lsr
-    sta store_acc
-    bcc @first_cell_is_empty
-    @first_cell_is_active:
-        lda #1
-        bne @assign_new_first_cell_value
-    @first_cell_is_empty:
-        lda #0
-    @assign_new_first_cell_value:
-        ldy column_index
-        dey
-        dey
-        sta (_lta_work_grid_row1_ptr), y
+    tax                                     ; Save Acc to X
+    lda #0
+    adc #0                                  ; Add carry to Acc
+    ldy column_index
+    dey
+    dey
+    sta (_lta_work_grid_row1_ptr), y
     
     ; Store new second cell value
-    lda store_acc
+    txa                                     ; Restore Acc from X
     lsr
-    sta store_acc
-    bcc @second_cell_is_empty
-    @second_cell_is_active:
-        lda #1
-        bne @assign_new_second_cell_value
-    @second_cell_is_empty:
-        lda #0
-    @assign_new_second_cell_value:
-        sta (_lta_work_grid_row2_ptr), y
+    tax                                     ; Save Acc to X
+    lda #0
+    adc #0                                  ; Add carry to Acc
+    sta (_lta_work_grid_row2_ptr), y
 
     ; Store new third cell value
-    lda store_acc
+    txa                                     ; Restore Acc from X
     lsr
-    sta store_acc
-    bcc @third_cell_is_empty
-    @third_cell_is_active:
-        lda #1
-        bne @assign_new_third_cell_value
-    @third_cell_is_empty:
-        lda #0
-    @assign_new_third_cell_value:
-        iny
-        sta (_lta_work_grid_row1_ptr), y
+    tax                                     ; Save Acc to X
+    lda #0
+    adc #0                                  ; Add carry to Acc
+    iny
+    sta (_lta_work_grid_row1_ptr), y
 
     ; Store new fourth cell value
-    lda store_acc
+    txa                                     ; Restore Acc from X
     lsr
-    sta store_acc
-    bcc @fourth_cell_is_empty
-    @fourth_cell_is_active:
-        lda #1
-        bne @assign_new_fourth_cell_value
-    @fourth_cell_is_empty:
-        lda #0
-    @assign_new_fourth_cell_value:
-        sta (_lta_work_grid_row2_ptr), y
+    tax                                     ; Save Acc to X
+    lda #0
+    adc #0                                  ; Add carry to Acc
+    sta (_lta_work_grid_row2_ptr), y
 
     rts
 .endproc

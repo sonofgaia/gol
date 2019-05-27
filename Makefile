@@ -21,7 +21,9 @@ OBJ = build/obj/core/asm_gamepad.o \
 	  build/obj/c_main.o \
 	  build/obj/c_grid.o \
 	  build/obj/c_grid_draw.o \
-	  build/obj/asm_lookup_table_algo.o
+	  build/obj/asm_lookup_table_algo.o \
+	  build/obj/asm_scenarios.o \
+	  build/obj/c_scenarios.o
 
 .SECONDARY:
 all: build/bin/main.nes build/bin/main.nes.0.nl build/bin/lookup_table_test
