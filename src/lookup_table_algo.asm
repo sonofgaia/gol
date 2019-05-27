@@ -12,7 +12,7 @@
 ; The cells we want to fetch the new values for are 05, 06, 09 and 10.
 
 .import _current_grid, _work_grid, _grid_buffer_swap
-.import _grid_draw__tile_write_callback
+.import _ppu_copy_buffer, _ppu_copy_buffer_write_index
 .import _grid_draw__switch_nametable
 .import _grid_draw__flush_ppu_copy_buffer
 .import incaxy
@@ -221,9 +221,18 @@ _lta_row_counter: .res 1
     ldy #0
     lda (lookup_table_ptr), y               ; Acc. now contains lookup table result
 
-    save_registers_user
-    jsr _grid_draw__tile_write_callback
-    restore_registers_user
+    ; Queue tile to PPU write buffer.
+    ; If buffer is full (64 bytes), flush it to the PPU.
+    ldx _ppu_copy_buffer_write_index
+    sta _ppu_copy_buffer, x
+    inx
+    stx _ppu_copy_buffer_write_index
+    cpx #64
+    bne :+
+        sta regs
+        jsr _grid_draw__flush_ppu_copy_buffer
+        lda regs
+    :
 
     ; Store new first cell value
     lsr
