@@ -1,4 +1,4 @@
-; This file implements an algorithm using a lookup table to (hopefully) speed up the process of applying
+; This file implements an algorithm using a lookup table to speed up the process of applying
 ; the rules for Life on our 64 x 60 array.
 
 ; The lookup table uses a 16-bit address to find the new values for 4 cells.
@@ -132,6 +132,8 @@ _lta_row_counter: .res 1
     lda #0
     sta lookup_table_bank_num
     sta lookup_table_ptr
+    lda #%00000100              ; lookup_table_ptr+1 will have bit 7 set after 5 rotate-lefts.
+                                ; This is because lookup table chunk is swapped in at 0x8000.
     sta lookup_table_ptr+1
 
     ; Get lookup table number
@@ -169,11 +171,6 @@ _lta_row_counter: .res 1
     lda (_lta_row4_ptr), y
     lsr
     rol lookup_table_ptr+1
-
-    ; Lookup table is swapped in at 0x8000, add this to the pointer value
-    lda lookup_table_ptr+1
-    ora #$80
-    sta lookup_table_ptr+1
 
     iny ; Next column
 
