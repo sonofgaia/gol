@@ -11,5 +11,6 @@ typedef uint8_t scenario_t[SCENARIO_ARRAY_BYTES];
 void scenarios__load(uint8_t *scenario);
 
 extern scenario_t scenario_01;
+extern scenario_t scenario_02;
 
 #endif
