@@ -116,27 +116,37 @@ _lta_row_counter: .res 1
     rts
 .endproc
 
-;;-------------------------------------------------------------------------------------------------
-;; Routine : _lta_calculate_new_batch_value
-;;-------------------------------------------------------------------------------------------------
-;; Calculates the new batch value using the lookup table.
-;;
-;; Params
-;;      Current column index (passed in the Y register)
-;;-------------------------------------------------------------------------------------------------
-.proc _lta_calculate_new_batch_value
-    lookup_table_bank_num = tmp1
-    lookup_table_ptr      = ptr1
-    column_index          = tmp2
+.macro _lta_calculate_new_batch_value_macro optimized_read
+    lookup_table_bank_num = gol_tmp1
+    lookup_table_ptr      = gol_ptr1
+    column_index          = gol_tmp2
 
+.if optimized_read
+    ; We optimize the reading of the lookup table address (lookup_table_bank_num + lookup_table_ptr)
+    ; by reusing the values that have already been read for the last batch.
+    lda lookup_table_ptr
+    ror
+    ror
+    ror
+    ror
+    ror
+    sta lookup_table_bank_num
+
+    lda lookup_table_ptr
+    and #$1F
+    ora #$80
+    sta lookup_table_ptr+1
+
+    iny
+    iny
+.else
     lda #0
     sta lookup_table_bank_num
-    sta lookup_table_ptr
     lda #%00000100              ; lookup_table_ptr+1 will have bit 7 set after 5 rotate-lefts.
                                 ; This is because lookup table chunk is swapped in at 0x8000.
     sta lookup_table_ptr+1
 
-    ; Get lookup table number
+    ; Get lookup table bank number
     lda (_lta_row1_ptr), y
     lsr
     rol lookup_table_bank_num
@@ -173,40 +183,69 @@ _lta_row_counter: .res 1
     rol lookup_table_ptr+1
 
     iny ; Next column
+.endif
+
+    ldx #0                  ; New value for lookup_table_ptr is generated in 'X'.
 
     lda (_lta_row1_ptr), y
-    lsr
-    rol lookup_table_ptr
+    beq :+
+        txa
+        ora #$80
+        tax
+    :
 
     lda (_lta_row2_ptr), y
-    lsr
-    rol lookup_table_ptr
+    beq :+
+        txa
+        ora #$40
+        tax
+    :
 
     lda (_lta_row3_ptr), y
-    lsr
-    rol lookup_table_ptr
+    beq :+
+        txa
+        ora #$20
+        tax
+    :
     
     lda (_lta_row4_ptr), y
-    lsr
-    rol lookup_table_ptr
+    beq :+
+        txa
+        ora #$10
+        tax
+    :
 
     iny ; Next column
 
     lda (_lta_row1_ptr), y
-    lsr
-    rol lookup_table_ptr
+    beq :+
+        txa
+        ora #$08
+        tax
+    :
 
     lda (_lta_row2_ptr), y
-    lsr
-    rol lookup_table_ptr
+    beq :+
+        txa
+        ora #$04
+        tax
+    :
 
     lda (_lta_row3_ptr), y
-    lsr
-    rol lookup_table_ptr
+    beq :+
+        txa
+        ora #$02
+        tax
+    :
     
     lda (_lta_row4_ptr), y
-    lsr
-    rol lookup_table_ptr
+    beq :+
+        txa
+        ora #$01
+        tax
+    :
+
+    stx lookup_table_ptr
 
     sty column_index                        ; Save column index
 
@@ -224,7 +263,7 @@ _lta_row_counter: .res 1
     sta _ppu_copy_buffer, x
     inx
     stx _ppu_copy_buffer_write_index
-    cpx #64
+    cpx #80
     bne :+
         sta regs
         jsr _grid_draw__flush_ppu_copy_buffer
@@ -267,6 +306,30 @@ _lta_row_counter: .res 1
     sta (_lta_work_grid_row2_ptr), y
 
     rts
+.endmacro
+
+;;-------------------------------------------------------------------------------------------------
+;; Routine : _lta_calculate_new_batch_value
+;;-------------------------------------------------------------------------------------------------
+;; Calculates the new batch value using the lookup table.
+;;
+;; Params
+;;      Current column index (passed in the Y register)
+;;-------------------------------------------------------------------------------------------------
+.proc _lta_calculate_new_batch_value
+    _lta_calculate_new_batch_value_macro FALSE
+.endproc
+
+;;-------------------------------------------------------------------------------------------------
+;; Routine : _lta_calculate_new_batch_value_optimized_read
+;;-------------------------------------------------------------------------------------------------
+;; Calculates the new batch value using the lookup table.
+;;
+;; Params
+;;      Current column index (passed in the Y register)
+;;-------------------------------------------------------------------------------------------------
+.proc _lta_calculate_new_batch_value_optimized_read
+    _lta_calculate_new_batch_value_macro TRUE
 .endproc
 
 .proc _lta_display_next_generation
@@ -280,9 +343,10 @@ _lta_row_counter: .res 1
 @row_loop:
     ldy #0                     ; Set column index
 
-    .repeat 32
-        jsr _lta_calculate_new_batch_value
-    .endrepeat
+    jsr _lta_calculate_new_batch_value
+.repeat 31
+    jsr _lta_calculate_new_batch_value_optimized_read
+.endrepeat
 
     jsr _lta_next_batch_row    ; Increment row pointers for next batch row
 

@@ -9,6 +9,10 @@ _LIB_ = 1 ; Prevent multiple inclusions of this file
 .globalzp _tmp1, _tmp2, _tmp3, _tmp4
 .globalzp _ptr1, _ptr2, _ptr3, _ptr4
 
+; Variables used outside the NMI handler.
+.globalzp gol_tmp1, gol_tmp2, gol_tmp3, gol_tmp4
+.globalzp gol_ptr1, gol_ptr2, gol_ptr3, gol_ptr4
+
 ; Space to save registers in user space and NMI.
 .globalzp regs
 
