@@ -116,6 +116,14 @@ _lta_row_counter: .res 1
     rts
 .endproc
 
+.macro set_xreg_bits_if_zero_flag_off bitmask
+    beq :+
+        txa
+        ora #bitmask
+        tax
+    :
+.endmacro
+
 .macro _lta_calculate_new_batch_value_macro optimized_read
     lookup_table_bank_num = gol_tmp1
     lookup_table_ptr      = gol_ptr1
@@ -140,47 +148,41 @@ _lta_row_counter: .res 1
     iny
     iny
 .else
-    lda #0
-    sta lookup_table_bank_num
-    lda #%00000100              ; lookup_table_ptr+1 will have bit 7 set after 5 rotate-lefts.
-                                ; This is because lookup table chunk is swapped in at 0x8000.
-    sta lookup_table_ptr+1
+    ldx #0
 
     ; Get lookup table bank number
     lda (_lta_row1_ptr), y
-    lsr
-    rol lookup_table_bank_num
+    set_xreg_bits_if_zero_flag_off $04
 
     lda (_lta_row2_ptr), y
-    lsr
-    rol lookup_table_bank_num
+    set_xreg_bits_if_zero_flag_off $02
     
     lda (_lta_row3_ptr), y
-    lsr
-    rol lookup_table_bank_num
+    set_xreg_bits_if_zero_flag_off $01
+    
+    stx lookup_table_bank_num
+
+    ldx #$80                    ; Lookup table chunk is swapped in at 0x8000.
 
     ; Get lookup table pointer
     lda (_lta_row4_ptr), y
-    lsr
-    rol lookup_table_ptr+1
+    set_xreg_bits_if_zero_flag_off $10
 
     iny ; Next column
 
     lda (_lta_row1_ptr), y
-    lsr
-    rol lookup_table_ptr+1
+    set_xreg_bits_if_zero_flag_off $08
 
     lda (_lta_row2_ptr), y
-    lsr
-    rol lookup_table_ptr+1
+    set_xreg_bits_if_zero_flag_off $04
 
     lda (_lta_row3_ptr), y
-    lsr
-    rol lookup_table_ptr+1
+    set_xreg_bits_if_zero_flag_off $02
     
     lda (_lta_row4_ptr), y
-    lsr
-    rol lookup_table_ptr+1
+    set_xreg_bits_if_zero_flag_off $01
+
+    stx lookup_table_ptr+1
 
     iny ; Next column
 .endif
@@ -188,62 +190,30 @@ _lta_row_counter: .res 1
     ldx #0                  ; New value for lookup_table_ptr is generated in 'X'.
 
     lda (_lta_row1_ptr), y
-    beq :+
-        txa
-        ora #$80
-        tax
-    :
+    set_xreg_bits_if_zero_flag_off $80
 
     lda (_lta_row2_ptr), y
-    beq :+
-        txa
-        ora #$40
-        tax
-    :
+    set_xreg_bits_if_zero_flag_off $40
 
     lda (_lta_row3_ptr), y
-    beq :+
-        txa
-        ora #$20
-        tax
-    :
+    set_xreg_bits_if_zero_flag_off $20
     
     lda (_lta_row4_ptr), y
-    beq :+
-        txa
-        ora #$10
-        tax
-    :
+    set_xreg_bits_if_zero_flag_off $10
 
     iny ; Next column
 
     lda (_lta_row1_ptr), y
-    beq :+
-        txa
-        ora #$08
-        tax
-    :
+    set_xreg_bits_if_zero_flag_off $08
 
     lda (_lta_row2_ptr), y
-    beq :+
-        txa
-        ora #$04
-        tax
-    :
+    set_xreg_bits_if_zero_flag_off $04
 
     lda (_lta_row3_ptr), y
-    beq :+
-        txa
-        ora #$02
-        tax
-    :
+    set_xreg_bits_if_zero_flag_off $02
     
     lda (_lta_row4_ptr), y
-    beq :+
-        txa
-        ora #$01
-        tax
-    :
+    set_xreg_bits_if_zero_flag_off $01
 
     stx lookup_table_ptr
 
