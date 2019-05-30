@@ -233,7 +233,7 @@ _lta_row_counter: .res 1
     sta _ppu_copy_buffer, x
     inx
     stx _ppu_copy_buffer_write_index
-    cpx #80
+    cpx #100
     bne :+
         sta regs
         jsr _grid_draw__flush_ppu_copy_buffer

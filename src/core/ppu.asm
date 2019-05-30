@@ -101,13 +101,115 @@ _ppu_function_params: .res 2 ; Pass function params through this memory space.
     ptr = _ppu_function_params
 
     ldy #0
-@byte_count_loop:
+
+@copy_128_bytes:
+    ; Check if bytes to copy >= 128
+    txa
+    rol
+    tax
+    bcs :+
+        jmp @copy_64_bytes  ; Check if we need to copy at least 64 bytes
+    :
+
+.repeat 128
     lda (ptr), y
     sta PPU_MEMORY_RW
     iny
-    dex
-    bne @byte_count_loop
+.endrepeat
 
+@copy_64_bytes:
+    ; Check if bytes to copy >= 64
+    txa
+    rol
+    tax
+    bcs :+
+        jmp @copy_32_bytes  ; Check if we need to copy at least 32 bytes
+    :
+
+.repeat 64
+    lda (ptr), y
+    sta PPU_MEMORY_RW
+    iny
+.endrepeat
+
+@copy_32_bytes:
+    ; Check if bytes to copy >= 32
+    txa
+    rol
+    tax
+    bcs :+
+        jmp @copy_16_bytes  ; Check if we need to copy at least 16 bytes
+    :
+
+.repeat 32
+    lda (ptr), y
+    sta PPU_MEMORY_RW
+    iny
+.endrepeat
+
+@copy_16_bytes:
+    ; Check if bytes to copy >= 16
+    txa
+    rol
+    tax
+    bcc @copy_8_bytes  ; Check if we need to copy at least 16 bytes
+
+.repeat 16
+    lda (ptr), y
+    sta PPU_MEMORY_RW
+    iny
+.endrepeat
+
+@copy_8_bytes:
+    ; Check if bytes to copy >= 8
+    txa
+    rol
+    tax
+    bcc @copy_4_bytes  ; Check if we need to copy at least 16 bytes
+
+.repeat 8
+    lda (ptr), y
+    sta PPU_MEMORY_RW
+    iny
+.endrepeat
+
+@copy_4_bytes:
+    ; Check if bytes to copy >= 4
+    txa
+    rol
+    tax
+    bcc @copy_2_bytes  ; Check if we need to copy at least 16 bytes
+
+.repeat 4
+    lda (ptr), y
+    sta PPU_MEMORY_RW
+    iny
+.endrepeat
+
+@copy_2_bytes:
+    ; Check if bytes to copy >= 2
+    txa
+    rol
+    tax
+    bcc @copy_1_bytes  ; Check if we need to copy at least 1 byte
+
+.repeat 2
+    lda (ptr), y
+    sta PPU_MEMORY_RW
+    iny
+.endrepeat
+
+@copy_1_bytes:
+    ; Check if bytes to copy = 1
+    txa
+    rol
+    tax
+    bcc @end            ; Check if we need to copy at least 1 byte
+
+    lda (ptr), y
+    sta PPU_MEMORY_RW
+
+@end:
     rts
 .endproc
 
