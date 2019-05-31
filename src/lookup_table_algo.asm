@@ -228,12 +228,12 @@ _lta_row_counter: .res 1
     lda (lookup_table_ptr), y               ; Acc. now contains lookup table result
 
     ; Queue tile to PPU write buffer.
-    ; If buffer is full (100 bytes), flush it to the PPU.
+    ; If buffer is full (110 bytes), flush it to the PPU.
     ldx _ppu_copy_buffer_write_index
     sta _ppu_copy_buffer, x
     inx
     stx _ppu_copy_buffer_write_index
-    cpx #100
+    cpx #110
     bne :+
         sta regs
         jsr _grid_draw__flush_ppu_copy_buffer
