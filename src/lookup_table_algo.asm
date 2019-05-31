@@ -133,11 +133,11 @@ _lta_row_counter: .res 1
     ; We optimize the reading of the lookup table address (lookup_table_bank_num + lookup_table_ptr)
     ; by reusing the values that have already been read for the last batch.
     lda lookup_table_ptr
-    ror
-    ror
-    ror
-    ror
-    ror
+    lsr
+    lsr
+    lsr
+    lsr
+    lsr
     sta lookup_table_bank_num
 
     lda lookup_table_ptr
@@ -228,7 +228,7 @@ _lta_row_counter: .res 1
     lda (lookup_table_ptr), y               ; Acc. now contains lookup table result
 
     ; Queue tile to PPU write buffer.
-    ; If buffer is full (64 bytes), flush it to the PPU.
+    ; If buffer is full (100 bytes), flush it to the PPU.
     ldx _ppu_copy_buffer_write_index
     sta _ppu_copy_buffer, x
     inx
@@ -241,10 +241,8 @@ _lta_row_counter: .res 1
     :
 
     ; Store new first cell value
-    lsr
-    tax                                     ; Save Acc to X
-    lda #0
-    adc #0                                  ; Add carry to Acc
+    tax
+    and #$01
     ldy column_index
     dey
     dey
@@ -254,25 +252,20 @@ _lta_row_counter: .res 1
     txa                                     ; Restore Acc from X
     lsr
     tax                                     ; Save Acc to X
-    lda #0
-    adc #0                                  ; Add carry to Acc
+    and #$01
     sta (_lta_work_grid_row2_ptr), y
 
     ; Store new third cell value
     txa                                     ; Restore Acc from X
     lsr
     tax                                     ; Save Acc to X
-    lda #0
-    adc #0                                  ; Add carry to Acc
+    and #$01
     iny
     sta (_lta_work_grid_row1_ptr), y
 
     ; Store new fourth cell value
     txa                                     ; Restore Acc from X
     lsr
-    tax                                     ; Save Acc to X
-    lda #0
-    adc #0                                  ; Add carry to Acc
     sta (_lta_work_grid_row2_ptr), y
 
     rts
