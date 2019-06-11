@@ -11,8 +11,9 @@
 ; Suppose we take 16 cells in the array (00-15).
 ; The cells we want to fetch the new values for are 05, 06, 09 and 10.
 
+.include "grid_draw.inc"
+
 .import _current_grid, _work_grid, _grid_buffer_swap
-.import _ppu_copy_buffer, _ppu_copy_buffer_write_index
 .import _grid_draw__switch_nametable
 .import _grid_draw__flush_ppu_copy_buffer
 .import incaxy
@@ -130,6 +131,10 @@ _lta_row_counter: .res 1
     column_index          = gol_tmp2
 
 .if optimized_read
+    ; Switch bank on MMC3
+    lda #bank_reg::BANK_REG_8K_PRG_0
+    sta MMC3_BANK_SELECT ; TODO : Probably don't need to do this every batch..
+
     ; We optimize the reading of the lookup table address (lookup_table_bank_num + lookup_table_ptr)
     ; by reusing the values that have already been read for the last batch.
     lda lookup_table_ptr
@@ -138,7 +143,7 @@ _lta_row_counter: .res 1
     lsr
     lsr
     lsr
-    sta lookup_table_bank_num
+    sta MMC3_BANK_DATA  ; Acc. now contains lookup table bank number, switch bank on MMC3
 
     lda lookup_table_ptr
     and #$1F
@@ -148,6 +153,9 @@ _lta_row_counter: .res 1
     iny
     iny
 .else
+    ; Switch bank on MMC3
+    lda #bank_reg::BANK_REG_8K_PRG_0
+    sta MMC3_BANK_SELECT        ; TODO : Probably don't need to do this every batch..
     ldx #0
 
     ; Get lookup table bank number
@@ -160,7 +168,7 @@ _lta_row_counter: .res 1
     lda (_lta_row3_ptr), y
     set_xreg_bits_if_zero_flag_off $01
     
-    stx lookup_table_bank_num
+    stx MMC3_BANK_DATA          ; X now contains lookup table bank number
 
     ldx #$80                    ; Lookup table chunk is swapped in at 0x8000.
 
@@ -219,21 +227,16 @@ _lta_row_counter: .res 1
 
     sty column_index                        ; Save column index
 
-    ; Switch bank on MMC3
-    ldx #bank_reg::BANK_REG_8K_PRG_0
-    ldy lookup_table_bank_num 
-    __mmc3_switch_bank_inline TRUE, FALSE   ; Mode '0', not called from interrupt
-    
-    ldy #0
+    ldy #0  ; TODO: Use X register instead of Y here (LDA (addr, X)), will cost 1 extra cycle but will prevent need for STY/LDY column index
     lda (lookup_table_ptr), y               ; Acc. now contains lookup table result
 
     ; Queue tile to PPU write buffer.
     ; If buffer is full (110 bytes), flush it to the PPU.
-    ldx _ppu_copy_buffer_write_index
-    sta _ppu_copy_buffer, x
-    inx
-    stx _ppu_copy_buffer_write_index
-    cpx #110
+    ldy _grid_draw__ppu_copy_buffer_write_index
+    sta (_grid_draw__ppu_copy_buffer_ptr), y
+    iny
+    sty _grid_draw__ppu_copy_buffer_write_index
+    cpy #110
     bne :+
         sta regs
         jsr _grid_draw__flush_ppu_copy_buffer
@@ -241,32 +244,32 @@ _lta_row_counter: .res 1
     :
 
     ; Store new first cell value
-    tax
-    and #$01
-    ldy column_index
-    dey
-    dey
-    sta (_lta_work_grid_row1_ptr), y
+    tax                                     ; (2)
+    and #$01                                ; (2)
+    ldy column_index                        ; (3)
+    dey                                     ; (2)
+    dey                                     ; (2)
+    sta (_lta_work_grid_row1_ptr), y        ; (6)
     
     ; Store new second cell value
-    txa                                     ; Restore Acc from X
-    lsr
-    tax                                     ; Save Acc to X
-    and #$01
-    sta (_lta_work_grid_row2_ptr), y
+    txa                                     ; Restore Acc from X (2)
+    lsr                                     ; (2)
+    tax                                     ; Save Acc to X (2)
+    and #$01                                ; (2)
+    sta (_lta_work_grid_row2_ptr), y        ; (6)
 
     ; Store new third cell value
-    txa                                     ; Restore Acc from X
-    lsr
-    tax                                     ; Save Acc to X
-    and #$01
-    iny
-    sta (_lta_work_grid_row1_ptr), y
+    txa                                     ; Restore Acc from X (2)
+    lsr                                     ; (2)
+    tax                                     ; Save Acc to X (2)
+    and #$01                                ; (2)
+    iny                                     ; (2)
+    sta (_lta_work_grid_row1_ptr), y        ; (6)
 
     ; Store new fourth cell value
-    txa                                     ; Restore Acc from X
-    lsr
-    sta (_lta_work_grid_row2_ptr), y
+    txa                                     ; Restore Acc from X (2)
+    lsr                                     ; (2)
+    sta (_lta_work_grid_row2_ptr), y        ; (6)
 
     rts
 .endmacro
@@ -301,20 +304,20 @@ _lta_row_counter: .res 1
     lda #30
     sta _lta_row_counter
 
-    jsr _lta_init              ; Init life grid row pointers
+    jsr _lta_init                  ; Init life grid row pointers
 
-@row_loop:
-    ldy #0                     ; Set column index
+    @row_loop:
+        ldy #0                     ; Set column index
 
-    jsr _lta_calculate_new_batch_value
-.repeat 31
-    jsr _lta_calculate_new_batch_value_optimized_read
-.endrepeat
+        jsr _lta_calculate_new_batch_value
+    .repeat 31
+        jsr _lta_calculate_new_batch_value_optimized_read
+    .endrepeat
 
-    jsr _lta_next_batch_row    ; Increment row pointers for next batch row
+        jsr _lta_next_batch_row    ; Increment row pointers for next batch row
 
-    dec _lta_row_counter
-    bne @row_loop
+        dec _lta_row_counter
+        bne @row_loop
 
     jsr _grid_buffer_swap
     jsr _grid_draw__flush_ppu_copy_buffer

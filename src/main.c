@@ -5,6 +5,7 @@
 #include "mmc3.h"
 #include "oam.h"
 #include "grid.h"
+#include "grid_draw.h"
 #include "lookup_table_algo.h"
 #include "scenarios.h"
 
@@ -23,6 +24,7 @@ void main(void)
     
     scenarios__load(scenario_01);
     
+    grid_draw__init();
     enable_video();             // Display screen and sprites.
 
     while (1) {
