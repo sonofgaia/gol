@@ -16,6 +16,16 @@ _LIB_ = 1 ; Prevent multiple inclusions of this file
 ; Space to save registers in user space and NMI.
 .globalzp regs
 
+.global identify_table
+
+.macro txy
+    ldy identity_table, x
+.endmacro
+
+.macro tyx
+    ldx identity_table, y
+.endmacro
+
 .macro save_registers_user
     sta regs
     stx regs+1

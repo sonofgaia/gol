@@ -4,6 +4,7 @@
 
 .exportzp _mmc3_bank_select
 .export   _mmc3_switch_bank                  ; For 'C' environment
+.export   _mmc3_clear_ram
 .export   __mmc3_switch_bank                 ; For ASM environment, outside NMI
 .export   __mmc3_switch_bank_mode_0          ; For ASM environment, outside NMI
 .export   __mmc3_switch_bank_from_nmi        ; For ASM environment, inside NMI
@@ -100,5 +101,53 @@ _mmc3_bank_select: .res 1
 ;;-------------------------------------------------------------------------------------------------
 .proc __mmc3_switch_bank_mode_0_from_nmi
     __mmc3_switch_bank_inline TRUE, TRUE  ; Defined in 'mmc3.inc'
+    rts
+.endproc
+
+;;-------------------------------------------------------------------------------------------------
+;; Routine : _mmc3_clear_ram
+;;-------------------------------------------------------------------------------------------------
+;; Clears (sets to '0') the 8K of RAM provided by the MMC3 mapper.
+;;-------------------------------------------------------------------------------------------------
+.proc _mmc3_clear_ram
+    ldx #0
+
+    @loop:
+        sta $6000, x
+        sta $6100, x
+        sta $6200, x
+        sta $6300, x
+        sta $6400, x
+        sta $6500, x
+        sta $6600, x
+        sta $6700, x
+        sta $6800, x
+        sta $6900, x
+        sta $6A00, x
+        sta $6B00, x
+        sta $6C00, x
+        sta $6D00, x
+        sta $6E00, x
+        sta $6F00, x
+        sta $7000, x
+        sta $7100, x
+        sta $7200, x
+        sta $7300, x
+        sta $7400, x
+        sta $7500, x
+        sta $7600, x
+        sta $7700, x
+        sta $7800, x
+        sta $7900, x
+        sta $7A00, x
+        sta $7B00, x
+        sta $7C00, x
+        sta $7D00, x
+        sta $7E00, x
+        sta $7F00, x
+
+        inx
+        bne @loop
+
     rts
 .endproc

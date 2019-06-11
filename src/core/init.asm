@@ -19,6 +19,7 @@
 .import _ppu_write_scroll_offsets
 .import _ppu_write_control_reg1
 .import _mmc3_enable_prg_ram
+.import _mmc3_clear_ram
 .importzp _ppu_control_reg1
 .importzp _ppu_function_params
 
@@ -90,13 +91,14 @@ _oam: .res 256
    
     jsr _ppu_vblank_wait        ; Second wait for vblank, PPU is ready after this
 
+    jsr _mmc3_enable_prg_ram    ; Enable the MMC3's onboard RAM (8K, $6000-$7FFF)
+    jsr _mmc3_clear_ram
+
     jsr _ppu_disable_sprites
     jsr _ppu_disable_screen
     jsr _ppu_disable_vblank
 
-    jsr _mmc3_enable_prg_ram    ; Enable the MMC3's onboard RAM (8K, $6000-$7FFF)
-
-	lda #<(__STACK_START__+__STACKSIZE__)
+    lda #<(__STACK_START__+__STACKSIZE__)
     sta	sp
     lda	#>(__STACK_START__+__STACKSIZE__)
     sta	sp+1                    ; Set the c stack pointer

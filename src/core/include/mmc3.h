@@ -28,5 +28,6 @@ void __fastcall__ mmc3_set_chr_bank_mode_0(void);
 void __fastcall__ mmc3_set_chr_bank_mode_1(void);
 
 extern void __fastcall__ mmc3_switch_bank(mmc3_bank_reg_t bank_reg, uint8_t bank_num);
+extern void __fastcall__ mmc3_clear_ram(void);
 
 #endif

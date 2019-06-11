@@ -21,6 +21,7 @@ OBJ = build/obj/core/asm_gamepad.o \
 	  build/obj/c_main.o \
 	  build/obj/c_grid.o \
 	  build/obj/c_grid_draw.o \
+	  build/obj/asm_grid_draw.o \
 	  build/obj/asm_lookup_table_algo.o \
 	  build/obj/asm_scenarios.o \
 	  build/obj/c_scenarios.o
