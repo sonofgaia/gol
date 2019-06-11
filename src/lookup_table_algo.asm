@@ -131,10 +131,6 @@ _lta_row_counter: .res 1
     column_index          = gol_tmp2
 
 .if optimized_read
-    ; Switch bank on MMC3
-    lda #bank_reg::BANK_REG_8K_PRG_0
-    sta MMC3_BANK_SELECT ; TODO : Probably don't need to do this every batch..
-
     ; We optimize the reading of the lookup table address (lookup_table_bank_num + lookup_table_ptr)
     ; by reusing the values that have already been read for the last batch.
     lda lookup_table_ptr
@@ -153,9 +149,6 @@ _lta_row_counter: .res 1
     iny
     iny
 .else
-    ; Switch bank on MMC3
-    lda #bank_reg::BANK_REG_8K_PRG_0
-    sta MMC3_BANK_SELECT        ; TODO : Probably don't need to do this every batch..
     ldx #0
 
     ; Get lookup table bank number
@@ -240,6 +233,7 @@ _lta_row_counter: .res 1
     bne :+
         sta regs
         jsr _grid_draw__flush_ppu_copy_buffer
+        jsr _grid_draw__switch_ppu_copy_buffer
         lda regs
     :
 
@@ -299,6 +293,10 @@ _lta_row_counter: .res 1
 .endproc
 
 .proc _lta_display_next_generation
+    ; Switch bank on MMC3
+    lda #bank_reg::BANK_REG_8K_PRG_0
+    sta MMC3_BANK_SELECT ; TODO : Probably don't need to do this every batch..
+
     ; We traverse the array and calculate the results in batches of 2x2 cells.
     ; This gives us 32 batches horizontally and 30 batches vertically.
     lda #30

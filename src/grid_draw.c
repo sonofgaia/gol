@@ -30,9 +30,12 @@ void __fastcall__ grid_draw__flush_ppu_copy_buffer(void)
     task.params.ppu_data_copy.data      = grid_draw__ppu_copy_buffer_ptr;
     task.params.ppu_data_copy.data_len  = grid_draw__ppu_copy_buffer_write_index;
 
+    ++grid_draw__ppu_copy_buffers_in_use;
     task_index = nmi_task_list_add_task(&task);
 
-    nmi_task_list_wait(task_index);
+    while (grid_draw__ppu_copy_buffers_in_use == 3); // Wait until there is at least one buffer free.
+
+    //nmi_task_list_wait(task_index);
 
     ppu_write_addr += grid_draw__ppu_copy_buffer_write_index;
     grid_draw__ppu_copy_buffer_write_index = 0;

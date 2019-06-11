@@ -2,6 +2,7 @@
 .include "zeropage.inc"
 .include "ports.inc"
 .include "nmi_task_list.inc"
+.include "grid_draw.inc"
 .include "lib.inc"
 
 .import _main
@@ -196,7 +197,8 @@ JMP_OPCODE = $4C
     jsr _ppu_write_control_reg1
 
     jsr _nmi_task_list_increment_worker_index    ; Go to next task.
-    jmp @run_tasks
+    dec _grid_draw__ppu_copy_buffers_in_use
+    jmp @tasks_done
 
 @change_nametable:
     lda _ppu_control_reg1
