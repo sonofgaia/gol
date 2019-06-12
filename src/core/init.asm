@@ -27,7 +27,6 @@
 ; Startup code for cc65/ca65
 .export __STARTUP__:absolute=1
 .export _init, _exit
-.export _init_set_nmi_handler
 .export _nmi_handler
 .export _oam
 
@@ -116,27 +115,7 @@ _oam: .res 256
     brk
 .endproc
 
-.segment "BSS"
-
-_nmi: .res 3 ; Will store the JMP instruction to our NMI handler.
-
 .segment "CODE"
-
-RTI_OPCODE = $40
-JMP_OPCODE = $4C
-
-; Set the NMI handler
-; If an NMI occurs during this process, it will be ignored (RTI).
-.proc _init_set_nmi_handler
-    ldy #RTI_OPCODE
-    sty _nmi
-    sta _nmi+1      ; A contains low-byte of the addr
-    stx _nmi+2      ; X contains the high-byte of the addr
-    ldy #JMP_OPCODE
-    sty _nmi
-
-    rts
-.endproc
 
 .macro save_registers
     pha     ; Save 'A'
@@ -179,12 +158,12 @@ JMP_OPCODE = $4C
     jsr _ppu_set_rw_addr
 
     ; Call PPU write function
-    ldy #nmi_task::data
+    ldy #nmi_task::data_index
     lda (task_ptr), y
     sta _ppu_function_params
-    iny
-    lda (task_ptr), y
-    sta _ppu_function_params+1
+    ;iny
+    ;lda (task_ptr), y
+    ;sta _ppu_function_params+1
     ldy #nmi_task::data_len
     lda (task_ptr), y
     tax

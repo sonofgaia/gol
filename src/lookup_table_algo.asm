@@ -125,10 +125,10 @@ _lta_row_counter: .res 1
     :
 .endmacro
 
-.macro _lta_calculate_new_batch_value_macro optimized_read
-    lookup_table_bank_num = gol_tmp1
+.macro _lta_calculate_new_batch_value_macro optimized_read, ppu_buffer_index
     lookup_table_ptr      = gol_ptr1
     column_index          = gol_tmp2
+    store_results_ptr     = gol_ptr2
 
 .if optimized_read
     ; We optimize the reading of the lookup table address (lookup_table_bank_num + lookup_table_ptr)
@@ -218,78 +218,241 @@ _lta_row_counter: .res 1
 
     stx lookup_table_ptr
 
-    sty column_index                        ; Save column index
-
-    ldy #0  ; TODO: Use X register instead of Y here (LDA (addr, X)), will cost 1 extra cycle but will prevent need for STY/LDY column index
-    lda (lookup_table_ptr), y               ; Acc. now contains lookup table result
+    ldx #0
+    lda (lookup_table_ptr, x)               ; Acc. now contains lookup table result
 
     ; Queue tile to PPU write buffer.
     ; If buffer is full (110 bytes), flush it to the PPU.
-    ldy _grid_draw__ppu_copy_buffer_write_index
-    sta (_grid_draw__ppu_copy_buffer_ptr), y
-    iny
-    sty _grid_draw__ppu_copy_buffer_write_index
-    cpy #110
+    ldx _grid_draw__ppu_copy_buffer_write_index
+    .if ppu_buffer_index = 0
+        sta _grid_draw__ppu_copy_buffer1, x
+    .elseif ppu_buffer_index = 1
+        sta _grid_draw__ppu_copy_buffer2, x
+    .else
+        sta _grid_draw__ppu_copy_buffer3, x
+    .endif
+    inx
+    stx _grid_draw__ppu_copy_buffer_write_index
+    cpx #160
     bne :+
         sta regs
+        sty column_index                        ; Save column index
         jsr _grid_draw__flush_ppu_copy_buffer
         jsr _grid_draw__switch_ppu_copy_buffer
+        ldy column_index
         lda regs
+
+        bne :+
+            ; Result set is empty, barely anything to do.
+            dey
+            rts
     :
 
-    ; Store new first cell value
-    tax                                     ; (2)
-    and #$01                                ; (2)
-    ldy column_index                        ; (3)
-    dey                                     ; (2)
-    dey                                     ; (2)
-    sta (_lta_work_grid_row1_ptr), y        ; (6)
-    
-    ; Store new second cell value
-    txa                                     ; Restore Acc from X (2)
-    lsr                                     ; (2)
-    tax                                     ; Save Acc to X (2)
-    and #$01                                ; (2)
-    sta (_lta_work_grid_row2_ptr), y        ; (6)
+    tax
+    bne :+
+        ; Result set is empty, barely anything to do.
+        dey
+        rts
+    :
 
-    ; Store new third cell value
-    txa                                     ; Restore Acc from X (2)
-    lsr                                     ; (2)
-    tax                                     ; Save Acc to X (2)
-    and #$01                                ; (2)
-    iny                                     ; (2)
-    sta (_lta_work_grid_row1_ptr), y        ; (6)
+    dey
+    dey
 
-    ; Store new fourth cell value
-    txa                                     ; Restore Acc from X (2)
-    lsr                                     ; (2)
-    sta (_lta_work_grid_row2_ptr), y        ; (6)
+    lda _lta_store_call_table_lo, x
+    sta store_results_ptr
+    lda _lta_store_call_table_hi, x
+    sta store_results_ptr+1
 
-    rts
+    jmp (store_results_ptr)
 .endmacro
 
-;;-------------------------------------------------------------------------------------------------
-;; Routine : _lta_calculate_new_batch_value
-;;-------------------------------------------------------------------------------------------------
-;; Calculates the new batch value using the lookup table.
-;;
-;; Params
-;;      Current column index (passed in the Y register)
-;;-------------------------------------------------------------------------------------------------
-.proc _lta_calculate_new_batch_value
-    _lta_calculate_new_batch_value_macro FALSE
+.define _lta_store_call_table _lta_store_lookup_table_result_00, _lta_store_lookup_table_result_01, _lta_store_lookup_table_result_02, _lta_store_lookup_table_result_03, _lta_store_lookup_table_result_04, _lta_store_lookup_table_result_05, _lta_store_lookup_table_result_06, _lta_store_lookup_table_result_07, _lta_store_lookup_table_result_08, _lta_store_lookup_table_result_09, _lta_store_lookup_table_result_10, _lta_store_lookup_table_result_11, _lta_store_lookup_table_result_12, _lta_store_lookup_table_result_13, _lta_store_lookup_table_result_14, _lta_store_lookup_table_result_15
+
+_lta_store_call_table_lo: .lobytes _lta_store_call_table
+_lta_store_call_table_hi: .hibytes _lta_store_call_table
+
+.proc _lta_store_lookup_table_result_00
+    ; 0 0
+    ; 0 0
+    iny
+
+    rts
+.endproc
+.proc _lta_store_lookup_table_result_01
+    ; 1 0
+    ; 0 0
+    lda #1
+    sta (_lta_work_grid_row1_ptr), y
+    iny
+
+    rts
+.endproc
+.proc _lta_store_lookup_table_result_02
+    ; 0 0
+    ; 1 0
+    lda #1
+    sta (_lta_work_grid_row2_ptr), y
+    iny
+
+    rts
+.endproc
+.proc _lta_store_lookup_table_result_03
+    ; 1 0
+    ; 1 0
+    lda #1
+    sta (_lta_work_grid_row1_ptr), y
+    sta (_lta_work_grid_row2_ptr), y
+    iny
+
+    rts
+.endproc
+.proc _lta_store_lookup_table_result_04
+    ; 0 1
+    ; 0 0
+    iny
+    lda #1
+    sta (_lta_work_grid_row1_ptr), y
+
+    rts
+.endproc
+.proc _lta_store_lookup_table_result_05
+    ; 1 1
+    ; 0 0
+    lda #1
+    sta (_lta_work_grid_row1_ptr), y
+    iny
+    sta (_lta_work_grid_row1_ptr), y
+
+    rts
+.endproc
+.proc _lta_store_lookup_table_result_06
+    ; 0 1
+    ; 1 0
+    lda #1
+    sta (_lta_work_grid_row2_ptr), y
+    iny
+    sta (_lta_work_grid_row1_ptr), y
+
+    rts
+.endproc
+.proc _lta_store_lookup_table_result_07
+    ; 1 1
+    ; 1 0
+    lda #1
+    sta (_lta_work_grid_row1_ptr), y
+    sta (_lta_work_grid_row2_ptr), y
+    iny
+    sta (_lta_work_grid_row1_ptr), y
+
+    rts
+.endproc
+.proc _lta_store_lookup_table_result_08
+    ; 0 0
+    ; 0 1
+    iny
+    lda #1
+    sta (_lta_work_grid_row2_ptr), y
+
+    rts
+.endproc
+.proc _lta_store_lookup_table_result_09
+    ; 1 0
+    ; 0 1
+    lda #1
+    sta (_lta_work_grid_row1_ptr), y
+    iny
+    sta (_lta_work_grid_row2_ptr), y
+
+    rts
+.endproc
+.proc _lta_store_lookup_table_result_10
+    ; 0 0
+    ; 1 1
+    lda #1
+    sta (_lta_work_grid_row2_ptr), y
+    iny
+    sta (_lta_work_grid_row2_ptr), y
+
+    rts
+.endproc
+.proc _lta_store_lookup_table_result_11
+    ; 1 0
+    ; 1 1
+    lda #1
+    sta (_lta_work_grid_row1_ptr), y
+    sta (_lta_work_grid_row2_ptr), y
+    iny
+    sta (_lta_work_grid_row2_ptr), y
+
+    rts
+.endproc
+.proc _lta_store_lookup_table_result_12
+    ; 0 1
+    ; 0 1
+    iny
+    lda #1
+    sta (_lta_work_grid_row1_ptr), y
+    sta (_lta_work_grid_row2_ptr), y
+
+    rts
+.endproc
+.proc _lta_store_lookup_table_result_13
+    ; 1 1
+    ; 0 1
+    lda #1
+    sta (_lta_work_grid_row1_ptr), y
+    iny
+    sta (_lta_work_grid_row1_ptr), y
+    sta (_lta_work_grid_row2_ptr), y
+
+    rts
+.endproc
+.proc _lta_store_lookup_table_result_14
+    ; 0 1
+    ; 1 1
+    lda #1
+    sta (_lta_work_grid_row2_ptr), y
+    iny
+    sta (_lta_work_grid_row1_ptr), y
+    sta (_lta_work_grid_row2_ptr), y
+
+    rts
+.endproc
+.proc _lta_store_lookup_table_result_15
+    ; 1 1
+    ; 1 1
+    lda #1
+    sta (_lta_work_grid_row1_ptr), y
+    sta (_lta_work_grid_row2_ptr), y
+    iny
+    sta (_lta_work_grid_row1_ptr), y
+    sta (_lta_work_grid_row2_ptr), y
+
+    rts
 .endproc
 
-;;-------------------------------------------------------------------------------------------------
-;; Routine : _lta_calculate_new_batch_value_optimized_read
-;;-------------------------------------------------------------------------------------------------
-;; Calculates the new batch value using the lookup table.
-;;
-;; Params
-;;      Current column index (passed in the Y register)
-;;-------------------------------------------------------------------------------------------------
-.proc _lta_calculate_new_batch_value_optimized_read
-    _lta_calculate_new_batch_value_macro TRUE
+.proc _lta_calculate_new_batch_value_buf1
+    _lta_calculate_new_batch_value_macro FALSE, 0
+.endproc
+
+.proc _lta_calculate_new_batch_value_optimized_read_buf1
+    _lta_calculate_new_batch_value_macro TRUE, 0
+.endproc
+
+.proc _lta_calculate_new_batch_value_buf2
+    _lta_calculate_new_batch_value_macro FALSE, 1
+.endproc
+
+.proc _lta_calculate_new_batch_value_optimized_read_buf2
+    _lta_calculate_new_batch_value_macro TRUE, 1
+.endproc
+
+.proc _lta_calculate_new_batch_value_buf3
+    _lta_calculate_new_batch_value_macro FALSE, 2
+.endproc
+
+.proc _lta_calculate_new_batch_value_optimized_read_buf3
+    _lta_calculate_new_batch_value_macro TRUE, 2
 .endproc
 
 .proc _lta_display_next_generation
@@ -297,25 +460,68 @@ _lta_row_counter: .res 1
     lda #bank_reg::BANK_REG_8K_PRG_0
     sta MMC3_BANK_SELECT ; TODO : Probably don't need to do this every batch..
 
-    ; We traverse the array and calculate the results in batches of 2x2 cells.
-    ; This gives us 32 batches horizontally and 30 batches vertically.
-    lda #30
-    sta _lta_row_counter
-
     jsr _lta_init                  ; Init life grid row pointers
 
-    @row_loop:
-        ldy #0                     ; Set column index
+.repeat 5
+    ldy #0                     ; Set column index
 
-        jsr _lta_calculate_new_batch_value
+    jsr _lta_calculate_new_batch_value_buf1
     .repeat 31
-        jsr _lta_calculate_new_batch_value_optimized_read
+        jsr _lta_calculate_new_batch_value_optimized_read_buf1
     .endrepeat
 
-        jsr _lta_next_batch_row    ; Increment row pointers for next batch row
+    jsr _lta_next_batch_row    ; Increment row pointers for next batch row
+.endrepeat
+.repeat 5
+    ldy #0                     ; Set column index
 
-        dec _lta_row_counter
-        bne @row_loop
+    jsr _lta_calculate_new_batch_value_buf2
+    .repeat 31
+        jsr _lta_calculate_new_batch_value_optimized_read_buf2
+    .endrepeat
+
+    jsr _lta_next_batch_row    ; Increment row pointers for next batch row
+.endrepeat
+.repeat 5
+    ldy #0                     ; Set column index
+
+    jsr _lta_calculate_new_batch_value_buf3
+    .repeat 31
+        jsr _lta_calculate_new_batch_value_optimized_read_buf3
+    .endrepeat
+
+    jsr _lta_next_batch_row    ; Increment row pointers for next batch row
+.endrepeat
+.repeat 5
+    ldy #0                     ; Set column index
+
+    jsr _lta_calculate_new_batch_value_buf1
+    .repeat 31
+        jsr _lta_calculate_new_batch_value_optimized_read_buf1
+    .endrepeat
+
+    jsr _lta_next_batch_row    ; Increment row pointers for next batch row
+.endrepeat
+.repeat 5
+    ldy #0                     ; Set column index
+
+    jsr _lta_calculate_new_batch_value_buf2
+    .repeat 31
+        jsr _lta_calculate_new_batch_value_optimized_read_buf2
+    .endrepeat
+
+    jsr _lta_next_batch_row    ; Increment row pointers for next batch row
+.endrepeat
+.repeat 5
+    ldy #0                     ; Set column index
+
+    jsr _lta_calculate_new_batch_value_buf3
+    .repeat 31
+        jsr _lta_calculate_new_batch_value_optimized_read_buf3
+    .endrepeat
+
+    jsr _lta_next_batch_row    ; Increment row pointers for next batch row
+.endrepeat
 
     jsr _grid_buffer_swap
     jsr _grid_draw__flush_ppu_copy_buffer

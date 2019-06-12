@@ -26,9 +26,9 @@ void __fastcall__ grid_draw__flush_ppu_copy_buffer(void)
 
     task.type = NMI_TASK_TYPE_PPU_DATA_COPY; 
     
-    task.params.ppu_data_copy.dest_addr = ppu_write_addr;
-    task.params.ppu_data_copy.data      = grid_draw__ppu_copy_buffer_ptr;
-    task.params.ppu_data_copy.data_len  = grid_draw__ppu_copy_buffer_write_index;
+    task.params.ppu_data_copy.dest_addr  = ppu_write_addr;
+    task.params.ppu_data_copy.data_len   = grid_draw__ppu_copy_buffer_write_index;
+    task.params.ppu_data_copy.data_index = grid_draw__current_ppu_copy_buffer_index;
 
     ++grid_draw__ppu_copy_buffers_in_use;
     task_index = nmi_task_list_add_task(&task);

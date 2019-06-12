@@ -7,5 +7,9 @@ _GRID_DRAW_ = 1 ; Prevent multiple inclusions of this file
 .global   _grid_draw__switch_ppu_copy_buffer
 .globalzp _grid_draw__ppu_copy_buffers_in_use
 .global   _grid_draw__switch_to_ppu_copy_buffer1
+.globalzp _grid_draw__current_ppu_copy_buffer_index
+.global   _grid_draw__ppu_copy_buffer1
+.global   _grid_draw__ppu_copy_buffer2
+.global   _grid_draw__ppu_copy_buffer3
 
 .endif

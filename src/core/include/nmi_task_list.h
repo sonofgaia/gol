@@ -11,7 +11,8 @@
 
 typedef struct {
     uint8_t *dest_addr;
-    uint8_t *data;
+    uint8_t deprecated1;
+    uint8_t data_index;
     uint8_t data_len;
 } nmi_task_ppu_data_copy_params_t;
 

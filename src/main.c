@@ -29,6 +29,9 @@ void main(void)
 
     while (1) {
         lta_display_next_generation();
+        grid__clear_buffer1();
+        lta_display_next_generation();
+        grid__clear_buffer2();
     }
 }
 

@@ -1,5 +1,6 @@
 .include "zeropage.inc"
 .include "ports.inc"
+.include "grid_draw.inc"
 
 .import   popptr1
 .import   popa
@@ -98,118 +99,39 @@ _ppu_function_params: .res 2 ; Pass function params through this memory space.
 ;;     Byte count    (passed through X register)
 ;;
 .proc _nmi_ppu_write
-    ptr = _ppu_function_params
+    data_index = _ppu_function_params
 
-    ldy #0
+    lda data_index
 
-@copy_128_bytes:
-    ; Check if bytes to copy >= 128
-    txa
-    rol
-    tax
-    bcs :+
-        jmp @copy_64_bytes  ; Check if we need to copy at least 64 bytes
+    cmp #1
+    bne :+
+        ; Use buffer 2    
+        jmp nmi_ppu_write__read_from_buffer2
     :
-
-.repeat 128
-    lda (ptr), y
-    sta PPU_MEMORY_RW
-    iny
-.endrepeat
-
-@copy_64_bytes:
-    ; Check if bytes to copy >= 64
-    txa
-    rol
-    tax
-    bcs :+
-        jmp @copy_32_bytes  ; Check if we need to copy at least 32 bytes
+    cmp #2
+    bne :+
+        ; Use buffer 3
+        jmp nmi_ppu_write__read_from_buffer3
     :
+    ; Use buffer 1
 
-.repeat 64
-    lda (ptr), y
-    sta PPU_MEMORY_RW
-    iny
-.endrepeat
-
-@copy_32_bytes:
-    ; Check if bytes to copy >= 32
-    txa
-    rol
-    tax
-    bcs :+
-        jmp @copy_16_bytes  ; Check if we need to copy at least 16 bytes
-    :
-
-.repeat 32
-    lda (ptr), y
-    sta PPU_MEMORY_RW
-    iny
-.endrepeat
-
-@copy_16_bytes:
-    ; Check if bytes to copy >= 16
-    txa
-    rol
-    tax
-    bcc @copy_8_bytes  ; Check if we need to copy at least 16 bytes
-
-.repeat 16
-    lda (ptr), y
-    sta PPU_MEMORY_RW
-    iny
-.endrepeat
-
-@copy_8_bytes:
-    ; Check if bytes to copy >= 8
-    txa
-    rol
-    tax
-    bcc @copy_4_bytes  ; Check if we need to copy at least 16 bytes
-
-.repeat 8
-    lda (ptr), y
-    sta PPU_MEMORY_RW
-    iny
-.endrepeat
-
-@copy_4_bytes:
-    ; Check if bytes to copy >= 4
-    txa
-    rol
-    tax
-    bcc @copy_2_bytes  ; Check if we need to copy at least 16 bytes
-
-.repeat 4
-    lda (ptr), y
-    sta PPU_MEMORY_RW
-    iny
-.endrepeat
-
-@copy_2_bytes:
-    ; Check if bytes to copy >= 2
-    txa
-    rol
-    tax
-    bcc @copy_1_bytes  ; Check if we need to copy at least 1 byte
-
-.repeat 2
-    lda (ptr), y
-    sta PPU_MEMORY_RW
-    iny
-.endrepeat
-
-@copy_1_bytes:
-    ; Check if bytes to copy = 1
-    txa
-    rol
-    tax
-    bcc @end            ; Check if we need to copy at least 1 byte
-
-    lda (ptr), y
-    sta PPU_MEMORY_RW
-
-@end:
+nmi_ppu_write__read_from_buffer1:
+    .repeat 160, i
+        lda _grid_draw__ppu_copy_buffer1+i
+        sta PPU_MEMORY_RW
+    .endrepeat
+    rts
+nmi_ppu_write__read_from_buffer2:
+    .repeat 160, i
+        lda _grid_draw__ppu_copy_buffer2+i
+        sta PPU_MEMORY_RW
+    .endrepeat
+    rts
+nmi_ppu_write__read_from_buffer3:
+    .repeat 160, i
+        lda _grid_draw__ppu_copy_buffer3+i
+        sta PPU_MEMORY_RW
+    .endrepeat
     rts
 .endproc
 
