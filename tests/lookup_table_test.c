@@ -69,6 +69,7 @@ int main(int argc, char **argv)
 
     for (key.value = 0; key.value <= last_key.value; key.value++) {
         lookup_result     = lookup_table[key.value];
+        lookup_result.value = lookup_result.value >> 4; // Format of lookup table has been changed..
         calculated_result = get_new_cell_values_for_key(key);
 
         if (calculated_result.value != lookup_result.value) {
