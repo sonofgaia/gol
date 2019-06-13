@@ -7,13 +7,14 @@
 #include "grid.h"
 #include "grid_draw.h"
 #include "lookup_table_algo.h"
-#include "scenarios.h"
 
 void init_swappable_rom_banks(void);
 void init_video(void);
 void enable_video(void);
 void write_message_to_screen(void);
 void delay(void);
+
+extern void scenario_11(void);
 
 void main(void)
 {
@@ -22,7 +23,7 @@ void main(void)
 
     write_message_to_screen();  // Writes a string message to the video memory.
     
-    scenarios__load(scenario_01);
+    scenario_11();
     
     grid_draw__init();
     enable_video();             // Display screen and sprites.

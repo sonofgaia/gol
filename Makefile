@@ -24,11 +24,13 @@ OBJ = build/obj/core/asm_gamepad.o \
 	  build/obj/c_grid_draw.o \
 	  build/obj/asm_grid_draw.o \
 	  build/obj/asm_lookup_table_algo.o \
-	  build/obj/asm_scenarios.o \
-	  build/obj/c_scenarios.o
+	  build/obj/scenarios.o
 
 .SECONDARY:
 all: build/bin/main.nes build/bin/main.nes.0.nl build/bin/lookup_table_test
+
+build/obj/scenarios.o: build/asm/scenarios.s src/scenarios.txt
+	ca65 $(INCLUDES) $< -g -o $@
 
 build/obj/core/asm_%.o: src/core/%.asm
 	ca65 $(INCLUDES) $< -g -o $@ 
@@ -64,6 +66,9 @@ build/debug/main.labels.txt: build/bin/main.nes
 
 build/bin/lookup_table.bin: script/create_lookup_table.php
 	./script/create_lookup_table.php > build/bin/lookup_table.bin
+
+build/asm/scenarios.s: script/compile_scenarios.php src/scenarios.txt
+	./script/compile_scenarios.php > build/asm/scenarios.s
 
 build/bin/main.nes: $(OBJ) lib/nes.lib
 	ld65 -Ln build/debug/main.labels.txt -C $(LINKER_CFG_FILE) --dbgfile build/debug/main.nes.dbg -m build/debug/main.map.txt -o build/bin/$(BINFILE) $^

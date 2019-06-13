@@ -251,7 +251,7 @@ store_results_ptr = gol_ptr4
 .segment "LTA_STORE_ROUTINES"
 
 .align 16
-.proc _lta_store_lookup_table_result_00 ; 2 bytes
+.proc _lta_store_lookup_table_result_00
     ; 0 0
     ; 0 0
     dey
@@ -259,7 +259,7 @@ store_results_ptr = gol_ptr4
     rts
 .endproc
 .align 16
-.proc _lta_store_lookup_table_result_01 ; 6 bytes
+.proc _lta_store_lookup_table_result_01
     ; 1 0
     ; 0 0
     dey
@@ -271,7 +271,7 @@ store_results_ptr = gol_ptr4
     rts
 .endproc
 .align 16
-.proc _lta_store_lookup_table_result_02 ; 6 bytes
+.proc _lta_store_lookup_table_result_02
     ; 0 0
     ; 1 0
     dey
@@ -283,7 +283,7 @@ store_results_ptr = gol_ptr4
     rts
 .endproc
 .align 16
-.proc _lta_store_lookup_table_result_03 ; 8 bytes
+.proc _lta_store_lookup_table_result_03
     ; 1 0
     ; 1 0
     dey
@@ -332,7 +332,7 @@ store_results_ptr = gol_ptr4
     rts
 .endproc
 .align 16
-.proc _lta_store_lookup_table_result_07 ; 10 bytes
+.proc _lta_store_lookup_table_result_07
     ; 1 1
     ; 1 0
     dey
@@ -435,7 +435,7 @@ store_results_ptr = gol_ptr4
     rts
 .endproc
 .align 16
-.proc _lta_store_lookup_table_result_15 ; 12 bytes
+.proc _lta_store_lookup_table_result_15
     ; 1 1
     ; 1 1
     dey
