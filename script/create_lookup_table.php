@@ -57,7 +57,7 @@ function get_new_cell_values_for_key($key)
     $newValue3 = get_new_cell_value($neighborCount3, $cv[6]);
     $newValue4 = get_new_cell_value($neighborCount4, $cv[5]);
 
-    return $newValue1 | ($newValue2 << 1) | ($newValue3 << 2) | ($newValue4 << 3);
+    return ($newValue1 << 4) | ($newValue2 << 5) | ($newValue3 << 6) | ($newValue4 << 7);
 }
 
 $fp = fopen('php://stdout', 'w+');

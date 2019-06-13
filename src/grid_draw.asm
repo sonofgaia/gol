@@ -8,10 +8,13 @@ _grid_draw__switch_ppu_copy_buffer_func_ptr:    .res 2
 _grid_draw__ppu_copy_buffers_in_use:            .res 1
 _grid_draw__current_ppu_copy_buffer_index:      .res 1
 
-.segment "DATA"
+.segment "PPU_COPY_BUFFERS"
 
+.align 256
 _grid_draw__ppu_copy_buffer1: .res 160
+.align 256
 _grid_draw__ppu_copy_buffer2: .res 160
+.align 256
 _grid_draw__ppu_copy_buffer3: .res 160
 
 .segment "CODE"

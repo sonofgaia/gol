@@ -8,28 +8,23 @@ _grid_buffer2: .res 4096
 
 .segment "CODE"
 
-.proc _grid__clear_buffer1
+.macro clear_buffer buffer
     ldx #0
     lda #0
 @loop:    
     .repeat 16, i
-        sta _grid_buffer1 + (i * 256), x
+        sta buffer + (i * 256), x
     .endrepeat
     inx
     bne @loop 
 
     rts
+.endmacro
+
+.proc _grid__clear_buffer1
+    clear_buffer _grid_buffer1
 .endproc
 
 .proc _grid__clear_buffer2
-    ldx #0
-    lda #0
-@loop:    
-    .repeat 16, i
-        sta _grid_buffer2 + (i * 256), x
-    .endrepeat
-    inx
-    bne @loop 
-
-    rts
+    clear_buffer _grid_buffer2
 .endproc

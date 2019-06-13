@@ -20,6 +20,7 @@ OBJ = build/obj/core/asm_gamepad.o \
 	  build/obj/core/c_mmc3.o \
 	  build/obj/c_main.o \
 	  build/obj/c_grid.o \
+	  build/obj/asm_grid.o \
 	  build/obj/c_grid_draw.o \
 	  build/obj/asm_grid_draw.o \
 	  build/obj/asm_lookup_table_algo.o \
@@ -35,8 +36,14 @@ build/obj/core/asm_%.o: src/core/%.asm
 build/obj/asm_lookup_table_algo.o: src/lookup_table_algo.asm build/bin/lookup_table.bin
 	ca65 $(INCLUDES) $< -g -o $@ 
 
+build/obj/core/asm_init.o: src/core/init.asm chr/Alpha.chr
+	ca65 $(INCLUDES) $< -g -o $@
+
 build/obj/asm_%.o: src/%.asm
 	ca65 $(INCLUDES) $< -g -o $@ 
+
+build/asm/core/c_nmi_task_list.s: src/core/nmi_task_list.c src/core/include/nmi_task_list.h
+	cc65 -Oir $(INCLUDES) $< -g -o $@ 
 
 build/asm/core/c_%.s: src/core/%.c
 	cc65 -Oir $(INCLUDES) $< -g -o $@ 

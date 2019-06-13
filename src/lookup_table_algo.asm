@@ -33,12 +33,11 @@ _lta_row4_ptr: .res 2
 _lta_work_grid_row1_ptr: .res 2
 _lta_work_grid_row2_ptr: .res 2
 
-_lta_row_counter: .res 1
-
 .segment "LOOKUP_TABLE"
 .incbin "build/bin/lookup_table.bin"
 
 .segment "CODE"
+store_results_ptr = gol_ptr4
 
 ;;-------------------------------------------------------------------------------------------------
 ;; Routine : _lta_init
@@ -68,11 +67,14 @@ _lta_row_counter: .res 1
     lda _work_grid
     jsr incaxy
     stx _lta_work_grid_row1_ptr+1
-    sta _lta_work_grid_row1_ptr    ; Init work grid row1 pointer
+    sta _lta_work_grid_row1_ptr             ; Init work grid row1 pointer
 
     jsr incaxy
     stx _lta_work_grid_row2_ptr+1
-    sta _lta_work_grid_row2_ptr    ; Init work grid row2 pointer
+    sta _lta_work_grid_row2_ptr             ; Init work grid row2 pointer
+
+    lda #>_lta_store_lookup_table_result_00
+    sta store_results_ptr+1                 ; High byte of pointer was made constant for performance.
 
     rts
 .endproc
@@ -125,10 +127,22 @@ _lta_row_counter: .res 1
     :
 .endmacro
 
+.macro add_tile_to_ppu_write_buffer ppu_buffer_index
+    ldx _grid_draw__ppu_copy_buffer_write_index
+    .if ppu_buffer_index = 0
+        sta _grid_draw__ppu_copy_buffer1, x
+    .elseif ppu_buffer_index = 1
+        sta _grid_draw__ppu_copy_buffer2, x
+    .else
+        sta _grid_draw__ppu_copy_buffer3, x
+    .endif
+    inx
+    stx _grid_draw__ppu_copy_buffer_write_index
+.endmacro
+
 .macro _lta_calculate_new_batch_value_macro optimized_read, ppu_buffer_index
     lookup_table_ptr      = gol_ptr1
     column_index          = gol_tmp2
-    store_results_ptr     = gol_ptr2
 
 .if optimized_read
     ; We optimize the reading of the lookup table address (lookup_table_bank_num + lookup_table_ptr)
@@ -220,85 +234,60 @@ _lta_row_counter: .res 1
 
     ldx #0
     lda (lookup_table_ptr, x)               ; Acc. now contains lookup table result
-
-    ; Queue tile to PPU write buffer.
-    ; If buffer is full (110 bytes), flush it to the PPU.
-    ldx _grid_draw__ppu_copy_buffer_write_index
-    .if ppu_buffer_index = 0
-        sta _grid_draw__ppu_copy_buffer1, x
-    .elseif ppu_buffer_index = 1
-        sta _grid_draw__ppu_copy_buffer2, x
-    .else
-        sta _grid_draw__ppu_copy_buffer3, x
-    .endif
-    inx
-    stx _grid_draw__ppu_copy_buffer_write_index
-    cpx #160
     bne :+
-        sta regs
-        sty column_index                        ; Save column index
-        jsr _grid_draw__flush_ppu_copy_buffer
-        jsr _grid_draw__switch_ppu_copy_buffer
-        ldy column_index
-        lda regs
-
-        bne :+
-            ; Result set is empty, barely anything to do.
-            dey
-            rts
-    :
-
-    tax
-    bne :+
-        ; Result set is empty, barely anything to do.
+        ; No living cells in results, we don't need to update the work grid.
+        add_tile_to_ppu_write_buffer ppu_buffer_index
         dey
+
         rts
     :
 
-    dey
-    dey
+    add_tile_to_ppu_write_buffer ppu_buffer_index
 
-    lda _lta_store_call_table_lo, x
-    sta store_results_ptr
-    lda _lta_store_call_table_hi, x
-    sta store_results_ptr+1
-
+    sta store_results_ptr                   ; Result is used as low-byte of function pointer.  High-byte is constant.
     jmp (store_results_ptr)
 .endmacro
 
-.define _lta_store_call_table _lta_store_lookup_table_result_00, _lta_store_lookup_table_result_01, _lta_store_lookup_table_result_02, _lta_store_lookup_table_result_03, _lta_store_lookup_table_result_04, _lta_store_lookup_table_result_05, _lta_store_lookup_table_result_06, _lta_store_lookup_table_result_07, _lta_store_lookup_table_result_08, _lta_store_lookup_table_result_09, _lta_store_lookup_table_result_10, _lta_store_lookup_table_result_11, _lta_store_lookup_table_result_12, _lta_store_lookup_table_result_13, _lta_store_lookup_table_result_14, _lta_store_lookup_table_result_15
+.segment "LTA_STORE_ROUTINES"
 
-_lta_store_call_table_lo: .lobytes _lta_store_call_table
-_lta_store_call_table_hi: .hibytes _lta_store_call_table
-
-.proc _lta_store_lookup_table_result_00
+.align 16
+.proc _lta_store_lookup_table_result_00 ; 2 bytes
     ; 0 0
     ; 0 0
-    iny
+    dey
 
     rts
 .endproc
-.proc _lta_store_lookup_table_result_01
+.align 16
+.proc _lta_store_lookup_table_result_01 ; 6 bytes
     ; 1 0
     ; 0 0
+    dey
+    dey
     lda #1
     sta (_lta_work_grid_row1_ptr), y
     iny
 
     rts
 .endproc
-.proc _lta_store_lookup_table_result_02
+.align 16
+.proc _lta_store_lookup_table_result_02 ; 6 bytes
     ; 0 0
     ; 1 0
+    dey
+    dey
     lda #1
     sta (_lta_work_grid_row2_ptr), y
     iny
 
     rts
 .endproc
-.proc _lta_store_lookup_table_result_03
+.align 16
+.proc _lta_store_lookup_table_result_03 ; 8 bytes
     ; 1 0
     ; 1 0
+    dey
+    dey
     lda #1
     sta (_lta_work_grid_row1_ptr), y
     sta (_lta_work_grid_row2_ptr), y
@@ -306,18 +295,22 @@ _lta_store_call_table_hi: .hibytes _lta_store_call_table
 
     rts
 .endproc
+.align 16
 .proc _lta_store_lookup_table_result_04
     ; 0 1
     ; 0 0
-    iny
+    dey
     lda #1
     sta (_lta_work_grid_row1_ptr), y
 
     rts
 .endproc
+.align 16
 .proc _lta_store_lookup_table_result_05
     ; 1 1
     ; 0 0
+    dey
+    dey
     lda #1
     sta (_lta_work_grid_row1_ptr), y
     iny
@@ -325,9 +318,12 @@ _lta_store_call_table_hi: .hibytes _lta_store_call_table
 
     rts
 .endproc
+.align 16
 .proc _lta_store_lookup_table_result_06
     ; 0 1
     ; 1 0
+    dey
+    dey
     lda #1
     sta (_lta_work_grid_row2_ptr), y
     iny
@@ -335,9 +331,12 @@ _lta_store_call_table_hi: .hibytes _lta_store_call_table
 
     rts
 .endproc
-.proc _lta_store_lookup_table_result_07
+.align 16
+.proc _lta_store_lookup_table_result_07 ; 10 bytes
     ; 1 1
     ; 1 0
+    dey
+    dey
     lda #1
     sta (_lta_work_grid_row1_ptr), y
     sta (_lta_work_grid_row2_ptr), y
@@ -346,18 +345,22 @@ _lta_store_call_table_hi: .hibytes _lta_store_call_table
 
     rts
 .endproc
+.align 16
 .proc _lta_store_lookup_table_result_08
     ; 0 0
     ; 0 1
-    iny
+    dey
     lda #1
     sta (_lta_work_grid_row2_ptr), y
 
     rts
 .endproc
+.align 16
 .proc _lta_store_lookup_table_result_09
     ; 1 0
     ; 0 1
+    dey
+    dey
     lda #1
     sta (_lta_work_grid_row1_ptr), y
     iny
@@ -365,9 +368,12 @@ _lta_store_call_table_hi: .hibytes _lta_store_call_table
 
     rts
 .endproc
+.align 16
 .proc _lta_store_lookup_table_result_10
     ; 0 0
     ; 1 1
+    dey
+    dey
     lda #1
     sta (_lta_work_grid_row2_ptr), y
     iny
@@ -375,9 +381,12 @@ _lta_store_call_table_hi: .hibytes _lta_store_call_table
 
     rts
 .endproc
+.align 16
 .proc _lta_store_lookup_table_result_11
     ; 1 0
     ; 1 1
+    dey
+    dey
     lda #1
     sta (_lta_work_grid_row1_ptr), y
     sta (_lta_work_grid_row2_ptr), y
@@ -386,19 +395,23 @@ _lta_store_call_table_hi: .hibytes _lta_store_call_table
 
     rts
 .endproc
+.align 16
 .proc _lta_store_lookup_table_result_12
     ; 0 1
     ; 0 1
-    iny
+    dey
     lda #1
     sta (_lta_work_grid_row1_ptr), y
     sta (_lta_work_grid_row2_ptr), y
 
     rts
 .endproc
+.align 16
 .proc _lta_store_lookup_table_result_13
     ; 1 1
     ; 0 1
+    dey
+    dey
     lda #1
     sta (_lta_work_grid_row1_ptr), y
     iny
@@ -407,9 +420,12 @@ _lta_store_call_table_hi: .hibytes _lta_store_call_table
 
     rts
 .endproc
+.align 16
 .proc _lta_store_lookup_table_result_14
     ; 0 1
     ; 1 1
+    dey
+    dey
     lda #1
     sta (_lta_work_grid_row2_ptr), y
     iny
@@ -418,9 +434,12 @@ _lta_store_call_table_hi: .hibytes _lta_store_call_table
 
     rts
 .endproc
-.proc _lta_store_lookup_table_result_15
+.align 16
+.proc _lta_store_lookup_table_result_15 ; 12 bytes
     ; 1 1
     ; 1 1
+    dey
+    dey
     lda #1
     sta (_lta_work_grid_row1_ptr), y
     sta (_lta_work_grid_row2_ptr), y
@@ -430,6 +449,8 @@ _lta_store_call_table_hi: .hibytes _lta_store_call_table
 
     rts
 .endproc
+
+.segment "CODE"
 
 .proc _lta_calculate_new_batch_value_buf1
     _lta_calculate_new_batch_value_macro FALSE, 0
@@ -472,6 +493,9 @@ _lta_store_call_table_hi: .hibytes _lta_store_call_table
 
     jsr _lta_next_batch_row    ; Increment row pointers for next batch row
 .endrepeat
+    jsr _grid_draw__flush_ppu_copy_buffer
+    jsr _grid_draw__switch_ppu_copy_buffer
+
 .repeat 5
     ldy #0                     ; Set column index
 
@@ -482,6 +506,9 @@ _lta_store_call_table_hi: .hibytes _lta_store_call_table
 
     jsr _lta_next_batch_row    ; Increment row pointers for next batch row
 .endrepeat
+    jsr _grid_draw__flush_ppu_copy_buffer
+    jsr _grid_draw__switch_ppu_copy_buffer
+
 .repeat 5
     ldy #0                     ; Set column index
 
@@ -492,6 +519,9 @@ _lta_store_call_table_hi: .hibytes _lta_store_call_table
 
     jsr _lta_next_batch_row    ; Increment row pointers for next batch row
 .endrepeat
+    jsr _grid_draw__flush_ppu_copy_buffer
+    jsr _grid_draw__switch_ppu_copy_buffer
+
 .repeat 5
     ldy #0                     ; Set column index
 
@@ -502,6 +532,9 @@ _lta_store_call_table_hi: .hibytes _lta_store_call_table
 
     jsr _lta_next_batch_row    ; Increment row pointers for next batch row
 .endrepeat
+    jsr _grid_draw__flush_ppu_copy_buffer
+    jsr _grid_draw__switch_ppu_copy_buffer
+
 .repeat 5
     ldy #0                     ; Set column index
 
@@ -512,6 +545,9 @@ _lta_store_call_table_hi: .hibytes _lta_store_call_table
 
     jsr _lta_next_batch_row    ; Increment row pointers for next batch row
 .endrepeat
+    jsr _grid_draw__flush_ppu_copy_buffer
+    jsr _grid_draw__switch_ppu_copy_buffer
+
 .repeat 5
     ldy #0                     ; Set column index
 
@@ -522,6 +558,8 @@ _lta_store_call_table_hi: .hibytes _lta_store_call_table
 
     jsr _lta_next_batch_row    ; Increment row pointers for next batch row
 .endrepeat
+    jsr _grid_draw__flush_ppu_copy_buffer
+    jsr _grid_draw__switch_ppu_copy_buffer
 
     jsr _grid_buffer_swap
     jsr _grid_draw__flush_ppu_copy_buffer
