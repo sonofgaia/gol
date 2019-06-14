@@ -5,8 +5,8 @@
 
 #define CELL_COLS_PER_TILE  2
 #define CELL_ROWS_PER_TILE  2
-#define PADDING_COLS        2
-#define PADDING_ROWS        2
+#define PADDING_COLS        0
+#define PADDING_ROWS        0
 #define BYTES_WIDTH         (GRID_COLS + PADDING_COLS)
 #define BYTES_HEIGHT        (GRID_ROWS + PADDING_ROWS)
 
@@ -27,7 +27,7 @@ void __fastcall__ grid_buffer_swap(void)
     work_grid    = ptr;
 }
 
-void __fastcall__ grid_set_cell(uint8_t col, uint8_t row, cell_status_t cell_status)
+/*void __fastcall__ grid_set_cell(uint8_t col, uint8_t row, cell_status_t cell_status)
 {
     current_grid[row+1][col+1] = cell_status;
-}
+}*/

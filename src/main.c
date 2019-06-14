@@ -14,7 +14,7 @@ void enable_video(void);
 void write_message_to_screen(void);
 void delay(void);
 
-extern void scenario_11(void);
+extern void scenario_2(void);
 
 void main(void)
 {
@@ -23,7 +23,7 @@ void main(void)
 
     write_message_to_screen();  // Writes a string message to the video memory.
     
-    scenario_11();
+    scenario_2();
     
     grid_draw__init();
     enable_video();             // Display screen and sprites.

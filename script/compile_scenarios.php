@@ -60,7 +60,7 @@ foreach ($scenarios as $k => $scenario) {
     echo "    lda #1\n";
 
     foreach ($scenario['livingCells'] as $cell) {
-        $offset = ($cell['y'] + $scenario['offsetY']) * 66 + ($cell['x'] + $scenario['offsetX']);
+        $offset = ($cell['y'] + $scenario['offsetY']) * 64 + ($cell['x'] + $scenario['offsetX']);
         echo "    sta _grid_buffer1 + {$offset}\n";
     }
 
