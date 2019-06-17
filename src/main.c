@@ -14,7 +14,7 @@ void enable_video(void);
 void write_message_to_screen(void);
 void delay(void);
 
-extern void scenario_2(void);
+extern void scenario_16(void);
 
 void main(void)
 {
@@ -23,7 +23,8 @@ void main(void)
 
     write_message_to_screen();  // Writes a string message to the video memory.
     
-    scenario_2();
+    mmc3_switch_bank(BANK_REG_8K_PRG_0, 8);
+    scenario_16();
     
     grid_draw__init();
     enable_video();             // Display screen and sprites.

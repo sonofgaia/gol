@@ -55,7 +55,7 @@ echo ".import _grid_buffer1\n\n";
 foreach ($scenarios as $k => $scenario) {
     $scenarioNumber = $k + 1;
     echo ".export _scenario_{$scenarioNumber}\n\n";
-    echo ".segment \"CODE\"\n";
+    echo ".segment \"SCENARIOS\"\n";
     echo ".proc _scenario_{$scenarioNumber}\n";
     echo "    lda #1\n";
 

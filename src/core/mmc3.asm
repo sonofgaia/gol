@@ -30,22 +30,15 @@ _mmc3_bank_select: .res 1
 ;;     Bank number to switch to                          (passed through Accumulator)
 ;;-------------------------------------------------------------------------------------------------
 .proc _mmc3_switch_bank
-    bank_number         = tmp1
-    bank_select_bitmask = tmp2
-
-    sta bank_number
+    tax                         ; Save bank number to 'X'
 
     lda _mmc3_bank_select
     and #$F8
-    sta bank_select_bitmask
-    
     ldy #$00
-    lda (sp), y
-    ora bank_select_bitmask     ; 'A' now contains bank select byte
+    ora (sp), y
 
     sta MMC3_BANK_SELECT
-    lda bank_number
-    sta MMC3_BANK_DATA
+    stx MMC3_BANK_DATA
 
     jmp incsp2
 .endproc

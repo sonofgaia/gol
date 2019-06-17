@@ -23,6 +23,9 @@
 .include "lib.inc"
 .include "zeropage.inc"
 
+.linecont + ; Allow line continuation with '\'.
+
+
 .segment "ZPVARS" : zeropage
 
 _lta_row1_ptr: .res 2
@@ -39,7 +42,7 @@ _lta_work_grid_row2_ptr: .res 2
 .segment "LOOKUP_TABLE"
 .incbin "build/bin/lookup_table.bin"
 
-.segment "CODE"
+.segment "LTA_CODE1"
 store_results_ptr = gol_ptr4
 
 ;;-------------------------------------------------------------------------------------------------
@@ -99,36 +102,12 @@ store_results_ptr = gol_ptr4
 ;; Increments the row pointers so that they point to the next batch row.
 ;;-------------------------------------------------------------------------------------------------
 .proc _lta_next_batch_row
-    ldx _lta_row3_ptr+1
-    stx _lta_row1_ptr+1
-    lda _lta_row3_ptr
-    sta _lta_row1_ptr      ; row1 pointer inherits row3 pointer's old value
-
-    ldy #128
-    jsr incaxy
-    stx _lta_row3_ptr+1
-    sta _lta_row3_ptr      ; row3 pointer's old value is incremented by two rows (128 bytes) to obtain it's new value.
-
-    ldx _lta_row4_ptr+1
-    stx _lta_row2_ptr+1
-    lda _lta_row4_ptr
-    sta _lta_row2_ptr      ; row2 pointer inherits row4 pointer's old value
-
-    jsr incaxy
-    stx _lta_row4_ptr+1
-    sta _lta_row4_ptr      ; row4 pointer's old value is incremented by two rows (128 bytes) to obtain it's new value.
-
-    ldx _lta_work_grid_row1_ptr+1
-    lda _lta_work_grid_row1_ptr
-    jsr incaxy
-    stx _lta_work_grid_row1_ptr+1
-    sta _lta_work_grid_row1_ptr
-
-    ldx _lta_work_grid_row2_ptr+1
-    lda _lta_work_grid_row2_ptr
-    jsr incaxy
-    stx _lta_work_grid_row2_ptr+1
-    sta _lta_work_grid_row2_ptr
+    inc _lta_row1_ptr+1
+    inc _lta_row2_ptr+1
+    inc _lta_row3_ptr+1
+    inc _lta_row4_ptr+1
+    inc _lta_work_grid_row1_ptr+1
+    inc _lta_work_grid_row2_ptr+1
 
     rts
 .endproc
@@ -191,7 +170,7 @@ store_results_ptr = gol_ptr4
     iny
 .endmacro
 
-.macro _lta_calculate_new_batch_value_macro first_column, last_column, first_row, last_row, ppu_buffer_index
+.macro _lta_calc_batch_macro first_column, last_column, first_row, last_row, ppu_buffer_index, use_long_y_offset
     lookup_table_ptr      = gol_ptr1
     column_index          = gol_tmp2
 
@@ -284,7 +263,7 @@ store_results_ptr = gol_ptr4
         lda (_lta_row4_ptr), y
         set_xreg_bits_if_zero_flag_off $10
 
-        sty column_index
+        sty column_index ; TODO : Figure out exact Y-value here so we can load it later instead of storing then loading it.
         ldy #0
 
         lda (_lta_last_row_ptr), y
@@ -344,7 +323,7 @@ store_results_ptr = gol_ptr4
         ; Get lookup table bank number
         ldx #0
 
-        ldy #63 
+        ldy #191
         lda (_lta_row1_ptr), y
         set_xreg_bits_if_zero_flag_off $04
 
@@ -362,7 +341,7 @@ store_results_ptr = gol_ptr4
         lda (_lta_first_row_ptr), y
         set_xreg_bits_if_zero_flag_off $10
 
-        ldy #0 ; Next column
+        ldy #128 ; Next column
 
         lda (_lta_row1_ptr), y
         set_xreg_bits_if_zero_flag_off $08
@@ -428,8 +407,8 @@ store_results_ptr = gol_ptr4
         lda (_lta_first_row_ptr), y
         set_xreg_bits_if_zero_flag_off $10
 
-        sty column_index
-        ldy #0
+        sty column_index    ; TODO : Figure out exact y-value so that we don't have to store then load.
+        ldy #128
 
         lda (_lta_row1_ptr), y
         set_xreg_bits_if_zero_flag_off $08
@@ -488,7 +467,11 @@ store_results_ptr = gol_ptr4
         ; Get lookup table bank number
         ldx #0
 
-        ldy #63 
+        .if use_long_y_offset
+            ldy #191
+        .else
+            ldy #63
+        .endif
         lda (_lta_row1_ptr), y          ; Last column of last row
         set_xreg_bits_if_zero_flag_off $04
 
@@ -506,7 +489,11 @@ store_results_ptr = gol_ptr4
         lda (_lta_row4_ptr), y              ; Last column of third row
         set_xreg_bits_if_zero_flag_off $10
 
-        ldy #0 ; Next column
+        .if use_long_y_offset
+            ldy #128 ; Next column
+        .else
+            ldy #0 ; Next column
+        .endif
 
         lda (_lta_row1_ptr), y
         set_xreg_bits_if_zero_flag_off $08
@@ -572,8 +559,12 @@ store_results_ptr = gol_ptr4
         lda (_lta_row4_ptr), y
         set_xreg_bits_if_zero_flag_off $10
 
-        sty column_index
-        ldy #0
+        sty column_index    ; TODO : Figure out exact offset
+        .if use_long_y_offset
+            ldy #128
+        .else
+            ldy #0
+        .endif
 
         lda (_lta_row1_ptr), y
         set_xreg_bits_if_zero_flag_off $08
@@ -630,7 +621,7 @@ store_results_ptr = gol_ptr4
 .endif
 .endmacro
 
-.segment "LTA_STORE_ROUTINES"
+.segment "LTA_CODE2"
 
 .align 16
 .proc _lta_store_lookup_table_result_00
@@ -832,82 +823,173 @@ store_results_ptr = gol_ptr4
     rts
 .endproc
 
-.segment "CODE"
+.segment "LTA_CODE1"
 
-.proc _lta_calculate_new_batch_value_upper_left_corner
+.proc _lta_calc_batch_upper_left_corner
     ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calculate_new_batch_value_macro TRUE, FALSE, TRUE, FALSE, 0
+    _lta_calc_batch_macro TRUE, FALSE, TRUE, FALSE, 0, FALSE
 .endproc
 
-.proc _lta_calculate_new_batch_value_upper_right_corner
+.proc _lta_calc_batch_upper_right_corner
     ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calculate_new_batch_value_macro FALSE, TRUE, TRUE, FALSE, 0
+    _lta_calc_batch_macro FALSE, TRUE, TRUE, FALSE, 0, FALSE
 .endproc
 
-.proc _lta_calculate_new_batch_value_first_row
+.proc _lta_calc_batch_first_row
     ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calculate_new_batch_value_macro FALSE, FALSE, TRUE, FALSE, 0
+    _lta_calc_batch_macro FALSE, FALSE, TRUE, FALSE, 0, FALSE
 .endproc
 
-.proc _lta_calculate_new_batch_value_lower_left_corner
+.proc _lta_calc_batch_lower_left_corner
     ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calculate_new_batch_value_macro TRUE, FALSE, FALSE, TRUE, 2
+    _lta_calc_batch_macro TRUE, FALSE, FALSE, TRUE, 2, FALSE
 .endproc
 
-.proc _lta_calculate_new_batch_value_lower_right_corner
+.proc _lta_calc_batch_lower_right_corner
     ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calculate_new_batch_value_macro FALSE, TRUE, FALSE, TRUE, 2
+    _lta_calc_batch_macro FALSE, TRUE, FALSE, TRUE, 2, FALSE
 .endproc
 
-.proc _lta_calculate_new_batch_value_last_row
+.proc _lta_calc_batch_last_row
     ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calculate_new_batch_value_macro FALSE, FALSE, FALSE, TRUE, 2
+    _lta_calc_batch_macro FALSE, FALSE, FALSE, TRUE, 2, FALSE
 .endproc
 
-.proc _lta_calculate_new_batch_value_first_column_buf1
+.proc _lta_calc_batch_first_column_buf1
     ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calculate_new_batch_value_macro TRUE, FALSE, FALSE, FALSE, 0
+    _lta_calc_batch_macro TRUE, FALSE, FALSE, FALSE, 0, FALSE
 .endproc
 
-.proc _lta_calculate_new_batch_value_first_column_buf2
+.proc _lta_calc_batch_first_column_buf2
     ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calculate_new_batch_value_macro TRUE, FALSE, FALSE, FALSE, 1
+    _lta_calc_batch_macro TRUE, FALSE, FALSE, FALSE, 1, FALSE
 .endproc
 
-.proc _lta_calculate_new_batch_value_first_column_buf3
+.proc _lta_calc_batch_first_column_buf3
     ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calculate_new_batch_value_macro TRUE, FALSE, FALSE, FALSE, 2
+    _lta_calc_batch_macro TRUE, FALSE, FALSE, FALSE, 2, FALSE
 .endproc
 
-.proc _lta_calculate_new_batch_value_last_column_buf1
+.proc _lta_calc_batch_last_column_buf1
     ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calculate_new_batch_value_macro FALSE, TRUE, FALSE, FALSE, 0
+    _lta_calc_batch_macro FALSE, TRUE, FALSE, FALSE, 0, FALSE
 .endproc
 
-.proc _lta_calculate_new_batch_value_last_column_buf2
+.proc _lta_calc_batch_last_column_buf2
     ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calculate_new_batch_value_macro FALSE, TRUE, FALSE, FALSE, 1
+    _lta_calc_batch_macro FALSE, TRUE, FALSE, FALSE, 1, FALSE
 .endproc
 
-.proc _lta_calculate_new_batch_value_last_column_buf3
+.proc _lta_calc_batch_last_column_buf3
     ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calculate_new_batch_value_macro FALSE, TRUE, FALSE, FALSE, 2
+    _lta_calc_batch_macro FALSE, TRUE, FALSE, FALSE, 2, FALSE
 .endproc
 
-.proc _lta_calculate_new_batch_value_generic_buf1
+.proc _lta_calc_batch_generic_buf1
     ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calculate_new_batch_value_macro FALSE, FALSE, FALSE, FALSE, 0
+    _lta_calc_batch_macro FALSE, FALSE, FALSE, FALSE, 0, FALSE
 .endproc
 
-.proc _lta_calculate_new_batch_value_generic_buf2
+.proc _lta_calc_batch_generic_buf2
     ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calculate_new_batch_value_macro FALSE, FALSE, FALSE, FALSE, 1
+    _lta_calc_batch_macro FALSE, FALSE, FALSE, FALSE, 1, FALSE
 .endproc
 
-.proc _lta_calculate_new_batch_value_generic_buf3
+.proc _lta_calc_batch_generic_buf3
     ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calculate_new_batch_value_macro FALSE, FALSE, FALSE, FALSE, 2
+    _lta_calc_batch_macro FALSE, FALSE, FALSE, FALSE, 2, FALSE
 .endproc
+
+.proc _lta_calc_batch_first_column_buf1_long_y_offset
+    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
+    _lta_calc_batch_macro TRUE, FALSE, FALSE, FALSE, 0, TRUE
+.endproc
+
+.proc _lta_calc_batch_first_column_buf2_long_y_offset
+    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
+    _lta_calc_batch_macro TRUE, FALSE, FALSE, FALSE, 1, TRUE
+.endproc
+
+.proc _lta_calc_batch_first_column_buf3_long_y_offset
+    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
+    _lta_calc_batch_macro TRUE, FALSE, FALSE, FALSE, 2, TRUE
+.endproc
+
+.proc _lta_calc_batch_last_column_buf1_long_y_offset
+    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
+    _lta_calc_batch_macro FALSE, TRUE, FALSE, FALSE, 0, TRUE
+.endproc
+
+.proc _lta_calc_batch_last_column_buf2_long_y_offset
+    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
+    _lta_calc_batch_macro FALSE, TRUE, FALSE, FALSE, 1, TRUE
+.endproc
+
+.proc _lta_calc_batch_last_column_buf3_long_y_offset
+    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
+    _lta_calc_batch_macro FALSE, TRUE, FALSE, FALSE, 2, TRUE
+.endproc
+
+.proc _lta_calc_batch_generic_buf1_long_y_offset
+    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
+    _lta_calc_batch_macro FALSE, FALSE, FALSE, FALSE, 0, TRUE
+.endproc
+
+.proc _lta_calc_batch_generic_buf2_long_y_offset
+    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
+    _lta_calc_batch_macro FALSE, FALSE, FALSE, FALSE, 1, TRUE
+.endproc
+
+.proc _lta_calc_batch_generic_buf3_long_y_offset
+    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
+    _lta_calc_batch_macro FALSE, FALSE, FALSE, FALSE, 2, TRUE
+.endproc
+
+.macro calculate_batch_row_func_calls func1, func2, func3
+    jsr func1
+    .repeat 30
+        jsr func2
+    .endrepeat
+    jsr func3
+.endmacro
+
+.macro calculate_batch_row_macro row_number
+    .if row_number = 1
+        calculate_batch_row_func_calls _lta_calc_batch_upper_left_corner, \
+                                       _lta_calc_batch_first_row, \
+                                       _lta_calc_batch_upper_right_corner
+
+        .exitmacro
+    .elseif row_number = 30
+        calculate_batch_row_func_calls _lta_calc_batch_lower_left_corner, \
+                                       _lta_calc_batch_last_row, \
+                                       _lta_calc_batch_lower_right_corner
+
+        jsr _grid_draw__flush_ppu_copy_buffer
+        jsr _grid_draw__switch_ppu_copy_buffer
+        .exitmacro
+    .else
+        use_long_y_offset .set ((row_number .mod 2) = 0)        ; Use long Y offset every second row.
+        flush_buffer      .set ((row_number .mod 5) = 0)        ; Flush buffer every 5 rows.
+        buffer_number     .set (((row_number - 1) / 5) .mod 3) + 1
+
+        .if use_long_y_offset
+            calculate_batch_row_func_calls .ident(.sprintf("_lta_calc_batch_first_column_buf%d_long_y_offset", buffer_number)), \
+                                           .ident(.sprintf("_lta_calc_batch_generic_buf%d_long_y_offset", buffer_number)), \
+                                           .ident(.sprintf("_lta_calc_batch_last_column_buf%d_long_y_offset", buffer_number))
+            jsr _lta_next_batch_row
+        .else
+            calculate_batch_row_func_calls .ident(.sprintf("_lta_calc_batch_first_column_buf%d", buffer_number)), \
+                                           .ident(.sprintf("_lta_calc_batch_generic_buf%d", buffer_number)), \
+                                           .ident(.sprintf("_lta_calc_batch_last_column_buf%d", buffer_number))
+        .endif
+
+        .if flush_buffer
+            jsr _grid_draw__flush_ppu_copy_buffer
+            jsr _grid_draw__switch_ppu_copy_buffer
+        .endif
+    .endif
+.endmacro
 
 .proc _lta_display_next_generation
     ; Select the bank we will be switching on MMC3
@@ -916,108 +998,9 @@ store_results_ptr = gol_ptr4
 
     jsr _lta_init                  ; Init life grid row pointers
 
-    ldy #0                     ; Set column index
-
-    jsr _lta_calculate_new_batch_value_upper_left_corner
-    .repeat 30
-        jsr _lta_calculate_new_batch_value_first_row
+    .repeat 30, row_number
+        calculate_batch_row_macro (row_number+1)
     .endrepeat
-    jsr _lta_calculate_new_batch_value_upper_right_corner
-
-    jsr _lta_next_batch_row    ; Increment row pointers for next batch row
-.repeat 4
-    ldy #0                     ; Set column index
-
-    jsr _lta_calculate_new_batch_value_first_column_buf1
-    .repeat 30
-        jsr _lta_calculate_new_batch_value_generic_buf1
-    .endrepeat
-    jsr _lta_calculate_new_batch_value_last_column_buf1
-
-    jsr _lta_next_batch_row    ; Increment row pointers for next batch row
-.endrepeat
-    jsr _grid_draw__flush_ppu_copy_buffer
-    jsr _grid_draw__switch_ppu_copy_buffer
-
-.repeat 5
-    ldy #0                     ; Set column index
-
-    jsr _lta_calculate_new_batch_value_first_column_buf2
-    .repeat 30
-        jsr _lta_calculate_new_batch_value_generic_buf2
-    .endrepeat
-    jsr _lta_calculate_new_batch_value_last_column_buf2
-
-    jsr _lta_next_batch_row    ; Increment row pointers for next batch row
-.endrepeat
-    jsr _grid_draw__flush_ppu_copy_buffer
-    jsr _grid_draw__switch_ppu_copy_buffer
-
-.repeat 5
-    ldy #0                     ; Set column index
-
-    jsr _lta_calculate_new_batch_value_first_column_buf3
-    .repeat 30
-        jsr _lta_calculate_new_batch_value_generic_buf3
-    .endrepeat
-    jsr _lta_calculate_new_batch_value_last_column_buf3
-
-    jsr _lta_next_batch_row    ; Increment row pointers for next batch row
-.endrepeat
-    jsr _grid_draw__flush_ppu_copy_buffer
-    jsr _grid_draw__switch_ppu_copy_buffer
-
-.repeat 5
-    ldy #0                     ; Set column index
-
-    jsr _lta_calculate_new_batch_value_first_column_buf1
-    .repeat 30
-        jsr _lta_calculate_new_batch_value_generic_buf1
-    .endrepeat
-    jsr _lta_calculate_new_batch_value_last_column_buf1
-
-    jsr _lta_next_batch_row    ; Increment row pointers for next batch row
-.endrepeat
-    jsr _grid_draw__flush_ppu_copy_buffer
-    jsr _grid_draw__switch_ppu_copy_buffer
-
-.repeat 5
-    ldy #0                     ; Set column index
-
-    jsr _lta_calculate_new_batch_value_first_column_buf2
-    .repeat 30
-        jsr _lta_calculate_new_batch_value_generic_buf2
-    .endrepeat
-    jsr _lta_calculate_new_batch_value_last_column_buf2
-
-    jsr _lta_next_batch_row    ; Increment row pointers for next batch row
-.endrepeat
-    jsr _grid_draw__flush_ppu_copy_buffer
-    jsr _grid_draw__switch_ppu_copy_buffer
-
-.repeat 4
-    ldy #0                     ; Set column index
-
-    jsr _lta_calculate_new_batch_value_first_column_buf3
-    .repeat 30
-        jsr _lta_calculate_new_batch_value_generic_buf3
-    .endrepeat
-    jsr _lta_calculate_new_batch_value_last_column_buf3
-
-    jsr _lta_next_batch_row    ; Increment row pointers for next batch row
-.endrepeat
-    ldy #0                     ; Set column index
-
-    jsr _lta_calculate_new_batch_value_lower_left_corner
-    .repeat 30
-        jsr _lta_calculate_new_batch_value_last_row
-    .endrepeat
-    jsr _lta_calculate_new_batch_value_lower_right_corner
-
-    jsr _lta_next_batch_row    ; Increment row pointers for next batch row
-
-    jsr _grid_draw__flush_ppu_copy_buffer
-    jsr _grid_draw__switch_ppu_copy_buffer
 
     jsr _grid_buffer_swap
     ;jsr _grid_draw__flush_ppu_copy_buffer

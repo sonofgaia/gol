@@ -10,12 +10,12 @@ _grid_draw__current_ppu_copy_buffer_index:      .res 1
 
 .segment "PPU_COPY_BUFFERS"
 
-.align 256
 _grid_draw__ppu_copy_buffer1: .res 160
-.align 256
 _grid_draw__ppu_copy_buffer2: .res 160
-.align 256
 _grid_draw__ppu_copy_buffer3: .res 160
+_grid_draw__ppu_copy_buffer4: .res 160
+_grid_draw__ppu_copy_buffer5: .res 160
+_grid_draw__ppu_copy_buffer6: .res 160
 
 .segment "CODE"
 
