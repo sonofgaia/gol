@@ -25,7 +25,6 @@
 
 .linecont + ; Allow line continuation with '\'.
 
-
 .segment "ZPVARS" : zeropage
 
 _lta_row1_ptr: .res 2
@@ -153,17 +152,11 @@ store_results_ptr = gol_ptr4
 .macro optimized_read_of_lookup_table_ptr_hi
     ; We optimize the reading of the lookup table address (lookup_table_bank_num + lookup_table_ptr)
     ; by reusing the values that have already been read for the last batch.
-    lda lookup_table_ptr
-    lsr
-    lsr
-    lsr
-    lsr
-    lsr
-    sta MMC3_BANK_DATA                      ; Acc. now contains lookup table bank number, switch bank on MMC3
+    ldx lookup_table_ptr
+    lda lsr5_lookup_table, x
+    sta MMC3_BANK_DATA
 
-    lda lookup_table_ptr
-    and #$1F
-    ora #$80
+    lda and1f_or80_lookup_table, x
     sta lookup_table_ptr+1
 
     iny
@@ -171,8 +164,8 @@ store_results_ptr = gol_ptr4
 .endmacro
 
 .macro _lta_calc_batch_macro first_column, last_column, first_row, last_row, ppu_buffer_index, use_long_y_offset
-    lookup_table_ptr      = gol_ptr1
-    column_index          = gol_tmp2
+    lookup_table_ptr = gol_ptr1
+    column_index     = gol_tmp2
 
 .if first_row
     .if first_column ; Upper-left corner
@@ -1003,7 +996,6 @@ store_results_ptr = gol_ptr4
     .endrepeat
 
     jsr _grid_buffer_swap
-    ;jsr _grid_draw__flush_ppu_copy_buffer
     jsr _grid_draw__switch_nametable
 
     rts

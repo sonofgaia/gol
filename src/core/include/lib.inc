@@ -17,6 +17,8 @@ _LIB_ = 1 ; Prevent multiple inclusions of this file
 .globalzp regs
 
 .global identify_table
+.global lsr5_lookup_table
+.global and1f_or80_lookup_table
 
 .macro txy
     ldy identity_table, x
