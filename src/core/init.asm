@@ -21,6 +21,8 @@
 .import _ppu_write_control_reg1
 .import _mmc3_enable_prg_ram
 .import _mmc3_clear_ram
+.import _gamepad__save_inputs
+.import _handle_gamepad_input
 .importzp _ppu_control_reg1
 .importzp _ppu_function_params
 
@@ -196,13 +198,13 @@ _oam: .res 256
     jmp @run_tasks
 
 @tasks_done:
-
-    inc SPRITE_0_Y_POS
-
     jsr _oam_copy_to_ppu
     jsr _ppu_write_scroll_offsets
 
 @exit:
+    jsr _gamepad__save_inputs ; Read gamepads on every NMI
+    jsr _handle_gamepad_input
+
     restore_registers
 
     rti

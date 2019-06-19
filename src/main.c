@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdbool.h>
 #include "init.h"
 #include "gamepad.h"
 #include "ppu.h"
@@ -16,6 +17,8 @@ void delay(void);
 
 extern void scenario_16(void);
 
+uint8_t paused = false;
+
 void main(void)
 {
     init_swappable_rom_banks(); // Initialize MMC3 controller.
@@ -30,10 +33,21 @@ void main(void)
     enable_video();             // Display screen and sprites.
 
     while (1) {
-        lta_display_next_generation();
-        grid__clear_buffer1();
-        lta_display_next_generation();
-        grid__clear_buffer2();
+        while (!paused) {
+            lta_display_next_generation();
+            grid__clear_buffer1();
+            lta_display_next_generation();
+            grid__clear_buffer2();
+        }
+    }
+}
+
+// CAREFUL!  Called from NMI!  Make sure not to use the C stack!
+void handle_gamepad_input(void)
+{
+    if (P1_BTN_START_CUR_PRESSED && !P1_BTN_START_PREV_PRESSED) {
+        // Start was pressed 'now'.
+        paused = !paused; // Toggle paused state.
     }
 }
 

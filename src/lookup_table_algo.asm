@@ -951,8 +951,6 @@ store_results_ptr = gol_ptr4
         calculate_batch_row_func_calls _lta_calc_batch_upper_left_corner, \
                                        _lta_calc_batch_first_row, \
                                        _lta_calc_batch_upper_right_corner
-
-        .exitmacro
     .elseif row_number = 30
         calculate_batch_row_func_calls _lta_calc_batch_lower_left_corner, \
                                        _lta_calc_batch_last_row, \
@@ -960,7 +958,6 @@ store_results_ptr = gol_ptr4
 
         jsr _grid_draw__flush_ppu_copy_buffer
         jsr _grid_draw__switch_ppu_copy_buffer
-        .exitmacro
     .else
         use_long_y_offset .set ((row_number .mod 2) = 0)        ; Use long Y offset every second row.
         flush_buffer      .set ((row_number .mod 5) = 0)        ; Flush buffer every 5 rows.
