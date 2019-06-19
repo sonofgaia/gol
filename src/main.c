@@ -8,16 +8,16 @@
 #include "grid.h"
 #include "grid_draw.h"
 #include "lookup_table_algo.h"
+#include "scenarios.h"
 
 void init_swappable_rom_banks(void);
 void init_video(void);
 void enable_video(void);
 void write_message_to_screen(void);
-void delay(void);
-
-extern void scenario_16(void);
+void game_interface(void);
 
 uint8_t paused = false;
+uint8_t load_next_scenario = false;
 
 void main(void)
 {
@@ -32,12 +32,28 @@ void main(void)
     grid_draw__init();
     enable_video();             // Display screen and sprites.
 
+    game_interface();
+}
+
+void game_interface(void)
+{
+    uint8_t grid_buffer_index = 0;
+
     while (1) {
-        while (!paused) {
+        while (!paused && !load_next_scenario) {
             lta_display_next_generation();
-            grid__clear_buffer1();
-            lta_display_next_generation();
-            grid__clear_buffer2();
+
+            if (grid_buffer_index == 0)
+                grid__clear_buffer1();
+            else
+                grid__clear_buffer2();
+
+            grid_buffer_index = ++grid_buffer_index & 0x1;
+        }
+
+        if (load_next_scenario) {
+            paused = true;
+            load_next_scenario = false;
         }
     }
 }
@@ -48,6 +64,9 @@ void handle_gamepad_input(void)
     if (P1_BTN_START_CUR_PRESSED && !P1_BTN_START_PREV_PRESSED) {
         // Start was pressed 'now'.
         paused = !paused; // Toggle paused state.
+    }
+    else if (P1_BTN_SELECT_CUR_PRESSED && !P1_BTN_SELECT_PREV_PRESSED) {
+        load_next_scenario = true;
     }
 }
 
@@ -97,11 +116,4 @@ void write_message_to_screen(void)
     ppu_write((uint8_t*)message, strlen(message));
 
     ppu_write_scroll_offsets();
-}
-
-void delay(void)
-{
-    uint16_t i;
-
-    for (i = 0; i < 40000; i++);
 }
