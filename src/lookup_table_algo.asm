@@ -128,8 +128,7 @@ store_results_ptr = gol_ptr4
     .else
         sta _grid_draw__ppu_copy_buffer3, x
     .endif
-    inx
-    stx _grid_draw__ppu_copy_buffer_write_index
+    inc _grid_draw__ppu_copy_buffer_write_index
 .endmacro
 
 .macro load_lookup_results_and_store_to_grid ppu_buffer_index

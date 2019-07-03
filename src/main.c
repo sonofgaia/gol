@@ -13,7 +13,6 @@
 void init_swappable_rom_banks(void);
 void init_video(void);
 void enable_video(void);
-void write_message_to_screen(void);
 void game_interface(void);
 
 uint8_t paused = false;
@@ -24,8 +23,6 @@ void main(void)
     init_swappable_rom_banks(); // Initialize MMC3 controller.
     init_video();               // Configure display settings.
 
-    write_message_to_screen();  // Writes a string message to the video memory.
-    
     mmc3_switch_bank(BANK_REG_8K_PRG_0, 8);
     scenario_16();
     
@@ -48,7 +45,7 @@ void game_interface(void)
             else
                 grid__clear_buffer2();
 
-            grid_buffer_index = ++grid_buffer_index & 0x1;
+            grid_buffer_index = !grid_buffer_index;
         }
 
         if (load_next_scenario) {
@@ -105,15 +102,4 @@ void enable_video(void)
     ppu_enable_screen();
     ppu_enable_sprites();
     ppu_enable_vblank();
-}
-
-void write_message_to_screen(void)
-{
-    char message[] = "Hello world!";
-
-    // Write 'message' string in the middle of NAMETABLE_0
-    ppu_set_rw_addr_by_nametable_coordinate(NAMETABLE_0, 14, 10);
-    ppu_write((uint8_t*)message, strlen(message));
-
-    ppu_write_scroll_offsets();
 }
