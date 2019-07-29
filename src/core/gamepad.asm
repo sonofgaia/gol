@@ -18,7 +18,7 @@ _gamepad__p2_prev_state: .res 1
 
 .segment "CODE"
 
-;; Saves the gamepad inputs to memory locations '_gamepad_p1_state' and '_gamepad_p2_state'.
+;; Saves the gamepad inputs to memory locations '_gamepad__p1_cur_state' and '_gamepad__p2_cur_state'.
 .proc _gamepad__save_inputs
     lda _gamepad__p1_cur_state
     sta _gamepad__p1_prev_state
@@ -34,7 +34,7 @@ _gamepad__p2_prev_state: .res 1
     @read_gamepad1_button:
         lda GAMEPAD1
         lsr                         ; Acc. Bit 0 -> Carry flag
-        rol _gamepad__p1_cur_state  ; Carry flag -> _gamepad_p1_state
+        rol _gamepad__p1_cur_state  ; Carry flag -> _gamepad__p1_cur_state
         dex
         bne @read_gamepad1_button
 
@@ -42,7 +42,7 @@ _gamepad__p2_prev_state: .res 1
     @read_gamepad2_button:
         lda GAMEPAD2
         lsr                         ; Acc. Bit 0 -> Carry flag
-        rol _gamepad__p2_cur_state  ; Carry flag -> _gamepad_p2_state
+        rol _gamepad__p2_cur_state  ; Carry flag -> _gamepad__p2_cur_state
         dex
         bne @read_gamepad2_button
 
