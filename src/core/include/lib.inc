@@ -52,4 +52,9 @@ _LIB_ = 1 ; Prevent multiple inclusions of this file
     ldy regs+5
 .endmacro
 
+.macro write store_addr, load_addr_or_value
+    lda load_addr_or_value
+    sta store_addr
+.endmacro
+
 .endif

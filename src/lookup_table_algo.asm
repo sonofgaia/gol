@@ -982,8 +982,7 @@ store_results_ptr = gol_ptr4
 
 .proc _lta_display_next_generation
     ; Select the bank we will be switching on MMC3
-    lda #bank_reg::BANK_REG_8K_PRG_0
-    sta MMC3_BANK_SELECT
+    write MMC3_BANK_SELECT, #bank_reg::BANK_REG_8K_PRG_0
 
     jsr _lta_init                  ; Init life grid row pointers
 
@@ -992,7 +991,5 @@ store_results_ptr = gol_ptr4
     .endrepeat
 
     jsr _grid_buffer_swap
-    jsr _grid_draw__switch_nametable
-
-    rts
+    jmp _grid_draw__switch_nametable
 .endproc

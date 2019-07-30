@@ -1,3 +1,5 @@
+.include "lib.inc"
+
 .export   _gamepad__save_inputs
 .exportzp _gamepad__p1_cur_state, _gamepad__p2_cur_state
 .exportzp _gamepad__p1_prev_state, _gamepad__p2_prev_state
@@ -18,33 +20,30 @@ _gamepad__p2_prev_state: .res 1
 
 .segment "CODE"
 
+.macro read_gamepad_state gamepad_port, state_store_addr
+    .local read_gamepad_button
+
+    ldx #NB_BUTTONS_PER_GAMEPAD
+    read_gamepad_button:
+        lda gamepad_port
+        lsr                     ; Acc. Bit 0 -> Carry flag
+        rol state_store_addr    ; Carry flag -> state_store_addr
+        dex
+        bne read_gamepad_button
+.endmacro
+
 ;; Saves the gamepad inputs to memory locations '_gamepad__p1_cur_state' and '_gamepad__p2_cur_state'.
 .proc _gamepad__save_inputs
-    lda _gamepad__p1_cur_state
-    sta _gamepad__p1_prev_state
-    lda _gamepad__p2_cur_state
-    sta _gamepad__p2_prev_state     ; Save previously read values
+    ; Save previously read values
+    write _gamepad__p1_prev_state, _gamepad__p1_cur_state
+    write _gamepad__p2_prev_state, _gamepad__p2_cur_state
 
-    lda #$01
-    sta GAMEPAD1
-    lda #$00
-    sta GAMEPAD1                    ; Reset the button latch
+    ; Reset the button latch
+    write GAMEPAD1, #$01
+    write GAMEPAD1, #$00
 
-    ldx #NB_BUTTONS_PER_GAMEPAD
-    @read_gamepad1_button:
-        lda GAMEPAD1
-        lsr                         ; Acc. Bit 0 -> Carry flag
-        rol _gamepad__p1_cur_state  ; Carry flag -> _gamepad__p1_cur_state
-        dex
-        bne @read_gamepad1_button
-
-    ldx #NB_BUTTONS_PER_GAMEPAD
-    @read_gamepad2_button:
-        lda GAMEPAD2
-        lsr                         ; Acc. Bit 0 -> Carry flag
-        rol _gamepad__p2_cur_state  ; Carry flag -> _gamepad__p2_cur_state
-        dex
-        bne @read_gamepad2_button
+    read_gamepad_state GAMEPAD1, _gamepad__p1_cur_state
+    read_gamepad_state GAMEPAD2, _gamepad__p2_cur_state
 
     rts
 .endproc
