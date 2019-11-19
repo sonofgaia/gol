@@ -1,8 +1,10 @@
 .include "lib.inc"
 
 .export   _gamepad__save_inputs
-.exportzp _gamepad__p1_cur_state, _gamepad__p2_cur_state
-.exportzp _gamepad__p1_prev_state, _gamepad__p2_prev_state
+.exportzp _gamepad__p1_cur_state
+.exportzp _gamepad__p2_cur_state
+.exportzp _gamepad__p1_prev_state
+.exportzp _gamepad__p2_prev_state
 
 ;; Ports linked to gamepad usage
 GAMEPAD1 = $4016
@@ -20,12 +22,12 @@ _gamepad__p2_prev_state: .res 1
 
 .segment "CODE"
 
-.macro read_gamepad_state gamepad_port, state_store_addr
+.macro read_gamepad_state state_load_addr, state_store_addr
     .local read_gamepad_button
 
     ldx #NB_BUTTONS_PER_GAMEPAD
     read_gamepad_button:
-        lda gamepad_port
+        lda state_load_addr
         lsr                     ; Acc. Bit 0 -> Carry flag
         rol state_store_addr    ; Carry flag -> state_store_addr
         dex
@@ -39,8 +41,8 @@ _gamepad__p2_prev_state: .res 1
     write _gamepad__p2_prev_state, _gamepad__p2_cur_state
 
     ; Reset the button latch
-    write GAMEPAD1, #$01
-    write GAMEPAD1, #$00
+    write GAMEPAD1, #1
+    write GAMEPAD1, #0
 
     read_gamepad_state GAMEPAD1, _gamepad__p1_cur_state
     read_gamepad_state GAMEPAD2, _gamepad__p2_cur_state

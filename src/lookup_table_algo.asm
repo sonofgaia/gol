@@ -50,37 +50,23 @@ store_results_ptr = gol_ptr4
 ;; Initializes the pointers used to traverse the life grid.
 ;;-------------------------------------------------------------------------------------------------
 .proc _lta_init
-    ldx _current_grid+1
-    lda _current_grid
-    stx _lta_row2_ptr+1
-    sta _lta_row2_ptr
-    stx _lta_first_row_ptr+1
-    sta _lta_first_row_ptr      ; _current_grid = _lta_row2_ptr = _lta_first_row_ptr
+    ldax _current_grid
+    stax _lta_row2_ptr
+    stax _lta_first_row_ptr        ; _lta_row2_ptr = _lta_first_row_ptr = _current_grid
 
-    ldy #64
-    jsr decaxy
-    stx _lta_row1_ptr+1
-    sta _lta_row1_ptr
+    decax #64
+    stax _lta_row1_ptr             ; _lta_row1_ptr = _current_grid - 64
 
-    ldx _current_grid+1
-    lda _current_grid      ; A/X now contains a copy of _current_grid pointer
+    ldax _current_grid
+    incax                          ; Value to increment by is already loaded in Y (64)
+    stax _lta_row3_ptr             ; _lta_row3_ptr = _current_grid + 64
+    incax                          ; Value to increment by is already loaded in Y (64)
+    stax _lta_row4_ptr             ; _lta_row4_ptr = _current_grid + 128
 
-    jsr incaxy             ; Increment A/X pointer by 64 bytes
-    stx _lta_row3_ptr+1
-    sta _lta_row3_ptr      ; row2 pointer is now equal to _current_grid + 64 bytes (second row)
-
-    jsr incaxy             ; Increment A/X by another 64 bytes
-    stx _lta_row4_ptr+1
-    sta _lta_row4_ptr      ; row3 pointer is now equal to _current_grid + 128 bytes (third row)
-
-    ldx _work_grid+1
-    lda _work_grid
-    stx _lta_work_grid_row1_ptr+1
-    sta _lta_work_grid_row1_ptr             ; Init work grid row1 pointer
-
-    jsr incaxy
-    stx _lta_work_grid_row2_ptr+1
-    sta _lta_work_grid_row2_ptr             ; Init work grid row2 pointer
+    ldax _work_grid
+    stax _lta_work_grid_row1_ptr   ; _lta_work_grid_row1_ptr = _work_grid
+    incax                          ; Value to increment by is already loaded in Y (64)
+    stax _lta_work_grid_row2_ptr   ; _lta_work_grid_row2_ptr = _work_grid + 64
 
     lda #>_lta_store_lookup_table_result_00
     sta store_results_ptr+1                 ; High byte of pointer was made constant for performance.

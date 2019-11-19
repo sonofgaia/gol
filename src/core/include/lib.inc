@@ -57,4 +57,37 @@ _LIB_ = 1 ; Prevent multiple inclusions of this file
     sta store_addr
 .endmacro
 
+; Loads a value (immediate or address) into AX.
+.macro ldax arg
+    .if (.match (.left (1, {arg}), #))
+        ; immediate mode
+        lda #<(.right (.tcount ({arg})-1, {arg}))
+        ldx #>(.right (.tcount ({arg})-1, {arg}))
+    .else
+        ; assume absolute or zero page
+        lda arg
+        ldx 1+(arg)
+    .endif
+.endmacro
+
+; Writes the value in AX to memory.
+.macro stax addr
+    sta addr
+    stx 1+(addr)
+.endmacro
+
+.macro decax val
+    .ifnblank val
+    ldy val
+    .endif
+    jsr decaxy
+.endmacro
+
+.macro incax val
+    .ifnblank val
+    ldy val
+    .endif
+    jsr incaxy
+.endmacro
+
 .endif

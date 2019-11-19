@@ -23,7 +23,7 @@ void main(void)
     init_swappable_rom_banks(); // Initialize MMC3 controller.
     init_video();               // Configure display settings.
 
-    mmc3_switch_bank(BANK_REG_8K_PRG_0, 8);
+    mmc3__switch_bank(BANK_REG_8K_PRG_0, 8);
     scenario_16();
     
     grid_draw__init();
@@ -69,14 +69,14 @@ void handle_gamepad_input(void)
 
 void init_swappable_rom_banks(void)
 {
-    mmc3_set_prg_bank_mode_0();
-    mmc3_set_chr_bank_mode_0();
-    mmc3_switch_bank(BANK_REG_2K_CHR_0, 0);
-    mmc3_switch_bank(BANK_REG_2K_CHR_1, 2);
-    mmc3_switch_bank(BANK_REG_1K_CHR_0, 4);
-    mmc3_switch_bank(BANK_REG_1K_CHR_1, 5);
-    mmc3_switch_bank(BANK_REG_1K_CHR_2, 6);
-    mmc3_switch_bank(BANK_REG_1K_CHR_3, 7);
+    mmc3__set_prg_bank_mode_0();
+    mmc3__set_chr_bank_mode_0();
+    mmc3__switch_bank(BANK_REG_2K_CHR_0, 0);
+    mmc3__switch_bank(BANK_REG_2K_CHR_1, 2);
+    mmc3__switch_bank(BANK_REG_1K_CHR_0, 4);
+    mmc3__switch_bank(BANK_REG_1K_CHR_1, 5);
+    mmc3__switch_bank(BANK_REG_1K_CHR_2, 6);
+    mmc3__switch_bank(BANK_REG_1K_CHR_3, 7);
 }
 
 void init_video(void)

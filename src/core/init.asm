@@ -19,8 +19,8 @@
 .import _ppu_set_rw_addr
 .import _ppu_write_scroll_offsets
 .import _ppu_write_control_reg1
-.import _mmc3_enable_prg_ram
-.import _mmc3_clear_ram
+.import _mmc3__enable_prg_ram
+.import _mmc3__clear_ram
 .import _gamepad__save_inputs
 .import _handle_gamepad_input
 .importzp _ppu_control_reg1
@@ -93,8 +93,8 @@ _oam: .res 256
    
     jsr _ppu_vblank_wait        ; Second wait for vblank, PPU is ready after this
 
-    jsr _mmc3_enable_prg_ram    ; Enable the MMC3's onboard RAM (8K, $6000-$7FFF)
-    jsr _mmc3_clear_ram
+    jsr _mmc3__enable_prg_ram   ; Enable the MMC3's onboard RAM (8K, $6000-$7FFF)
+    jsr _mmc3__clear_ram
 
     jsr _ppu_disable_sprites
     jsr _ppu_disable_screen

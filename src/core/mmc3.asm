@@ -2,24 +2,24 @@
 .include "lib.inc"
 .include "zeropage.inc"
 
-.exportzp _mmc3_bank_select
-.export   _mmc3_switch_bank                  ; For 'C' environment
-.export   _mmc3_clear_ram
-.export   __mmc3_switch_bank                 ; For ASM environment, outside NMI
-.export   __mmc3_switch_bank_mode_0          ; For ASM environment, outside NMI
-.export   __mmc3_switch_bank_from_nmi        ; For ASM environment, inside NMI
-.export   __mmc3_switch_bank_mode_0_from_nmi ; For ASM environment, inside NMI
+.exportzp _mmc3__bank_select
+.export   _mmc3__switch_bank                  ; For 'C' environment
+.export   _mmc3__clear_ram
+;.export   __mmc3_switch_bank                 ; For ASM environment, outside NMI
+;.export   __mmc3_switch_bank_mode_0          ; For ASM environment, outside NMI
+;.export   __mmc3_switch_bank_from_nmi        ; For ASM environment, inside NMI
+;.export   __mmc3_switch_bank_mode_0_from_nmi ; For ASM environment, inside NMI
 
 .import   incsp2
 
 .segment "ZPVARS" : zeropage
 
-_mmc3_bank_select: .res 1
+_mmc3__bank_select: .res 1
 
 .segment "CODE"
 
 ;;-------------------------------------------------------------------------------------------------
-;; Routine : _mmc3_switch_bank
+;; Routine : _mmc3__switch_bank
 ;;-------------------------------------------------------------------------------------------------
 ;; Controls ROM bank switching with the MMC3 mapper.
 ;;
@@ -29,11 +29,11 @@ _mmc3_bank_select: .res 1
 ;;     Bank register identifier, see ENUM in 'mmc3.inc'  (passed on the stack)
 ;;     Bank number to switch to                          (passed through Accumulator)
 ;;-------------------------------------------------------------------------------------------------
-.proc _mmc3_switch_bank
+.proc _mmc3__switch_bank
     tax                         ; Save bank number to 'X'
 
-    lda _mmc3_bank_select
-    and #$F8
+    lda _mmc3__bank_select
+    and #$F8                    ; Do we need to do this?
     ldy #$00
     ora (sp), y
 
@@ -54,10 +54,10 @@ _mmc3_bank_select: .res 1
 ;;     Bank register identifier, see ENUM in 'mmc3.inc'  (passed through X register)
 ;;     Bank number to switch to                          (passed through Y register)
 ;;-------------------------------------------------------------------------------------------------
-.proc __mmc3_switch_bank
-    __mmc3_switch_bank_inline FALSE, FALSE  ; Defined in 'mmc3.inc'
-    rts
-.endproc
+;.proc __mmc3_switch_bank
+;    __mmc3_switch_bank_inline FALSE, FALSE  ; Defined in 'mmc3.inc'
+;    rts
+;.endproc
 
 ;;-------------------------------------------------------------------------------------------------
 ;; Routine : __mmc3_switch_bank_mode_0
@@ -67,10 +67,10 @@ _mmc3_bank_select: .res 1
 ;;
 ;; Designed to be called from assembly and outside the NMI.
 ;;-------------------------------------------------------------------------------------------------
-.proc __mmc3_switch_bank_mode_0
-    __mmc3_switch_bank_inline TRUE, FALSE  ; Defined in 'mmc3.inc'
-    rts
-.endproc
+;.proc __mmc3_switch_bank_mode_0
+;    __mmc3_switch_bank_inline TRUE, FALSE  ; Defined in 'mmc3.inc'
+;    rts
+;.endproc
 
 ;;-------------------------------------------------------------------------------------------------
 ;; Routine : __mmc3_switch_bank_from_nmi
@@ -79,10 +79,10 @@ _mmc3_bank_select: .res 1
 ;;
 ;; Designed to be called from assembly and inside the NMI.
 ;;-------------------------------------------------------------------------------------------------
-.proc __mmc3_switch_bank_from_nmi
-    __mmc3_switch_bank_inline FALSE, TRUE  ; Defined in 'mmc3.inc'
-    rts
-.endproc
+;.proc __mmc3_switch_bank_from_nmi
+;    __mmc3_switch_bank_inline FALSE, TRUE  ; Defined in 'mmc3.inc'
+;    rts
+;.endproc
 
 ;;-------------------------------------------------------------------------------------------------
 ;; Routine : __mmc3_switch_bank_mode_0_from_nmi
@@ -92,17 +92,17 @@ _mmc3_bank_select: .res 1
 ;;
 ;; Designed to be called from assembly and inside the NMI.
 ;;-------------------------------------------------------------------------------------------------
-.proc __mmc3_switch_bank_mode_0_from_nmi
-    __mmc3_switch_bank_inline TRUE, TRUE  ; Defined in 'mmc3.inc'
-    rts
-.endproc
+;.proc __mmc3_switch_bank_mode_0_from_nmi
+;    __mmc3_switch_bank_inline TRUE, TRUE  ; Defined in 'mmc3.inc'
+;    rts
+;.endproc
 
 ;;-------------------------------------------------------------------------------------------------
 ;; Routine : _mmc3_clear_ram
 ;;-------------------------------------------------------------------------------------------------
 ;; Clears (sets to '0') the 8K of RAM provided by the MMC3 mapper.
 ;;-------------------------------------------------------------------------------------------------
-.proc _mmc3_clear_ram
+.proc _mmc3__clear_ram
     ldx #0
     lda #0
 
