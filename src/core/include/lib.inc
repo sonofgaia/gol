@@ -61,8 +61,14 @@ _LIB_ = 1 ; Prevent multiple inclusions of this file
 .macro ldax arg
     .if (.match (.left (1, {arg}), #))
         ; immediate mode
-        lda #<(.right (.tcount ({arg})-1, {arg}))
-        ldx #>(.right (.tcount ({arg})-1, {arg}))
+        .if (.xmatch (#<.right (.tcount ({arg})-1, {arg}), #>.right (.tcount ({arg})-1, {arg})))
+            ; small memory optimization if low-byte and high-byte are the same
+            lda #<(.right (.tcount ({arg})-1, {arg}))
+            tax
+        .else
+            lda #<(.right (.tcount ({arg})-1, {arg}))
+            ldx #>(.right (.tcount ({arg})-1, {arg}))
+        .endif
     .else
         ; assume absolute or zero page
         lda arg

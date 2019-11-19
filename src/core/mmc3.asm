@@ -44,8 +44,7 @@ _mmc3__bank_modes: .res 1
 ;; Clears (sets to '0') the 8K of RAM provided by the MMC3 mapper.
 ;;-------------------------------------------------------------------------------------------------
 .proc _mmc3__clear_ram
-    ldx #0
-    lda #0
+    ldax #0
 
     @loop:
         sta $6000, x
