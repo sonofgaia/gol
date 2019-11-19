@@ -1,42 +1,13 @@
-.include "mmc3.inc"
 .include "lib.inc"
-.include "zeropage.inc"
 
 .exportzp _mmc3__bank_modes
-.export   _mmc3__switch_bank
 .export   _mmc3__clear_ram
-
-.import   incsp2
 
 .segment "ZPVARS" : zeropage
 
 _mmc3__bank_modes: .res 1
 
 .segment "CODE"
-
-;;-------------------------------------------------------------------------------------------------
-;; Routine : _mmc3__switch_bank
-;;-------------------------------------------------------------------------------------------------
-;; Controls ROM bank switching with the MMC3 mapper.
-;;
-;; Designed to be called from C and outside the NMI.
-;;
-;; Params
-;;     Bank register identifier, see ENUM in 'mmc3.inc'  (passed on the stack)
-;;     Bank number to switch to                          (passed through Accumulator)
-;;-------------------------------------------------------------------------------------------------
-.proc _mmc3__switch_bank
-    tax                     ; Save bank number to 'X'
-
-    lda _mmc3__bank_modes
-    ldy #$00
-    ora (sp), y             ; Acc. now contains bank modes + bank register
-
-    sta MMC3_BANK_SELECT
-    stx MMC3_BANK_DATA
-
-    jmp incsp2
-.endproc
 
 ;;-------------------------------------------------------------------------------------------------
 ;; Routine : _mmc3_clear_ram
