@@ -22,10 +22,8 @@ typedef enum {
     BANK_REG_8K_PRG_1,      // Second 8K PRG bank register ($A000-$BFFF)
 } mmc3__bank_reg_t;
 
-void __fastcall__ mmc3__set_prg_bank_mode_0(void);
-void __fastcall__ mmc3__set_prg_bank_mode_1(void);
-void __fastcall__ mmc3__set_chr_bank_mode_0(void);
-void __fastcall__ mmc3__set_chr_bank_mode_1(void);
+void __fastcall__ mmc3__set_prg_bank_mode(mmc3__prg_bank_mode_t prg_bank_mode);
+void __fastcall__ mmc3__set_chr_bank_mode(mmc3__chr_bank_mode_t chr_bank_mode);
 
 extern void __fastcall__ mmc3__switch_bank(mmc3__bank_reg_t bank_reg, uint8_t bank_num);
 extern void __fastcall__ mmc3__clear_ram(void);

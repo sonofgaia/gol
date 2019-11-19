@@ -4,33 +4,22 @@
 #define MMC3_PRG_RAM_PROTECT *((uint8_t*)0xA001)
 
 typedef struct {
-    uint16_t bank_select   :3;
-    uint16_t unused        :3;
+    uint16_t unused        :6;
     uint16_t prg_bank_mode :1;
     uint16_t chr_bank_mode :1;
-} mmc3__bank_select_t;
+} mmc3__bank_modes_t;
 
-extern mmc3__bank_select_t mmc3__bank_select;
-#pragma zpsym("mmc3__bank_select");
+extern mmc3__bank_modes_t mmc3__bank_modes;
+#pragma zpsym("mmc3__bank_modes");
 
-void __fastcall__ mmc3__set_prg_bank_mode_0(void)
+void __fastcall__ mmc3__set_prg_bank_mode(mmc3__prg_bank_mode_t prg_bank_mode)
 {
-    mmc3__bank_select.prg_bank_mode = PRG_ROM_BANK_MODE_0;
+    mmc3__bank_modes.prg_bank_mode = prg_bank_mode;
 }
 
-void __fastcall__ mmc3__set_prg_bank_mode_1(void)
+void __fastcall__ mmc3__set_chr_bank_mode(mmc3__chr_bank_mode_t chr_bank_mode)
 {
-    mmc3__bank_select.prg_bank_mode = PRG_ROM_BANK_MODE_1;
-}
-
-void __fastcall__ mmc3__set_chr_bank_mode_0(void)
-{
-    mmc3__bank_select.chr_bank_mode = CHR_ROM_BANK_MODE_0;
-}
-
-void __fastcall__ mmc3__set_chr_bank_mode_1(void)
-{
-    mmc3__bank_select.chr_bank_mode = CHR_ROM_BANK_MODE_1;
+    mmc3__bank_modes.chr_bank_mode = chr_bank_mode;
 }
 
 void __fastcall__ mmc3__enable_prg_ram(void)

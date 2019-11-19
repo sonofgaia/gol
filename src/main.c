@@ -69,8 +69,8 @@ void handle_gamepad_input(void)
 
 void init_swappable_rom_banks(void)
 {
-    mmc3__set_prg_bank_mode_0();
-    mmc3__set_chr_bank_mode_0();
+    mmc3__set_prg_bank_mode(PRG_ROM_BANK_MODE_0);
+    mmc3__set_chr_bank_mode(CHR_ROM_BANK_MODE_0);
     mmc3__switch_bank(BANK_REG_2K_CHR_0, 0);
     mmc3__switch_bank(BANK_REG_2K_CHR_1, 2);
     mmc3__switch_bank(BANK_REG_1K_CHR_0, 4);
