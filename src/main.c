@@ -24,7 +24,7 @@ void main(void)
     init_video();               // Configure display settings.
 
     mmc3__switch_bank(BANK_REG_8K_PRG_0, 8);
-    scenario_16();
+    scenario_12();
     
     grid_draw__init();
     enable_video();             // Display screen and sprites.

@@ -37,13 +37,13 @@ build/obj/core/asm_%.o: src/core/%.asm
 	ca65 $(INCLUDES) $< -g -o $@ 
 
 build/obj/asm_lookup_table_algo.o: src/lookup_table_algo.asm build/bin/lookup_table.bin
-	ca65 $(INCLUDES) $< -g -o $@ 
+	ca65 $(INCLUDES) $< -l $@.list -g -o $@ 
 
 build/obj/core/asm_init.o: src/core/init.asm chr/Alpha.chr
 	ca65 $(INCLUDES) $< -g -o $@
 
-build/obj/asm_%.o: src/%.asm
-	ca65 $(INCLUDES) $< -g -o $@ 
+build/obj/asm_%.o: src/%.asm src/core/include/lib.inc
+	ca65 $(INCLUDES) $< -l $@.list -g -o $@ 
 
 build/asm/core/c_nmi_task_list.s: src/core/nmi_task_list.c src/core/include/nmi_task_list.h
 	cc65 -Oir $(INCLUDES) $< -g -o $@ 

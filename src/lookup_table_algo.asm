@@ -52,10 +52,13 @@ store_results_ptr = gol_ptr4
 .proc _lta_init
     ldax _current_grid
     stax _lta_row2_ptr
-    stax _lta_first_row_ptr        ; _lta_row2_ptr = _lta_first_row_ptr = _current_grid
 
     decax #64
     stax _lta_row1_ptr             ; _lta_row1_ptr = _current_grid - 64
+    decax
+    stax _lta_first_row_ptr        ; This offset might seem odd for storing 'first row'.
+                                   ; This is because when we calculate the last row and make use of this pointer,
+                                   ; we are using a long Y offset.
 
     ldax _current_grid
     incax                          ; Value to increment by is already loaded in Y (64)
@@ -148,6 +151,34 @@ store_results_ptr = gol_ptr4
     iny
 .endmacro
 
+.macro set_xreg_low_nibble_from_row_ptrs ptr1, ptr2, ptr3, ptr4
+    lda (ptr1), y
+    set_xreg_bits_if_zero_flag_off $08
+
+    lda (ptr2), y
+    set_xreg_bits_if_zero_flag_off $04
+
+    lda (ptr3), y
+    set_xreg_bits_if_zero_flag_off $02
+    
+    lda (ptr4), y
+    set_xreg_bits_if_zero_flag_off $01
+.endmacro
+
+.macro set_xreg_high_nibble_from_row_ptrs ptr1, ptr2, ptr3, ptr4
+    lda (ptr1), y
+    set_xreg_bits_if_zero_flag_off $80
+
+    lda (ptr2), y
+    set_xreg_bits_if_zero_flag_off $40
+
+    lda (ptr3), y
+    set_xreg_bits_if_zero_flag_off $20
+    
+    lda (ptr4), y
+    set_xreg_bits_if_zero_flag_off $10
+.endmacro
+
 .macro _lta_calc_batch_macro first_column, last_column, first_row, last_row, ppu_buffer_index, use_long_y_offset
     lookup_table_ptr = gol_ptr1
     column_index     = gol_tmp2
@@ -177,17 +208,7 @@ store_results_ptr = gol_ptr4
 
         ldy #0 ; Next column
 
-        lda (_lta_last_row_ptr), y
-        set_xreg_bits_if_zero_flag_off $08
-
-        lda (_lta_row2_ptr), y
-        set_xreg_bits_if_zero_flag_off $04
-
-        lda (_lta_row3_ptr), y
-        set_xreg_bits_if_zero_flag_off $02
-        
-        lda (_lta_row4_ptr), y
-        set_xreg_bits_if_zero_flag_off $01
+        set_xreg_low_nibble_from_row_ptrs _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
 
         stx lookup_table_ptr+1
 
@@ -195,31 +216,11 @@ store_results_ptr = gol_ptr4
 
         ldx #0                              ; New value for lookup_table_ptr is generated in 'X'.
 
-        lda (_lta_last_row_ptr), y
-        set_xreg_bits_if_zero_flag_off $80
-
-        lda (_lta_row2_ptr), y
-        set_xreg_bits_if_zero_flag_off $40
-
-        lda (_lta_row3_ptr), y
-        set_xreg_bits_if_zero_flag_off $20
-        
-        lda (_lta_row4_ptr), y
-        set_xreg_bits_if_zero_flag_off $10
+        set_xreg_high_nibble_from_row_ptrs _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
 
         iny ; Next column
 
-        lda (_lta_last_row_ptr), y
-        set_xreg_bits_if_zero_flag_off $08
-
-        lda (_lta_row2_ptr), y
-        set_xreg_bits_if_zero_flag_off $04
-
-        lda (_lta_row3_ptr), y
-        set_xreg_bits_if_zero_flag_off $02
-        
-        lda (_lta_row4_ptr), y
-        set_xreg_bits_if_zero_flag_off $01
+        set_xreg_low_nibble_from_row_ptrs  _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
 
         stx lookup_table_ptr
 
@@ -229,32 +230,12 @@ store_results_ptr = gol_ptr4
 
         ldx #0                                  ; New value for lookup_table_ptr is generated in 'X'.
 
-        lda (_lta_last_row_ptr), y
-        set_xreg_bits_if_zero_flag_off $80
-
-        lda (_lta_row2_ptr), y
-        set_xreg_bits_if_zero_flag_off $40
-
-        lda (_lta_row3_ptr), y
-        set_xreg_bits_if_zero_flag_off $20
-        
-        lda (_lta_row4_ptr), y
-        set_xreg_bits_if_zero_flag_off $10
+        set_xreg_high_nibble_from_row_ptrs _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
 
         sty column_index ; TODO : Figure out exact Y-value here so we can load it later instead of storing then loading it.
         ldy #0
 
-        lda (_lta_last_row_ptr), y
-        set_xreg_bits_if_zero_flag_off $08
-
-        lda (_lta_row2_ptr), y
-        set_xreg_bits_if_zero_flag_off $04
-
-        lda (_lta_row3_ptr), y
-        set_xreg_bits_if_zero_flag_off $02
-        
-        lda (_lta_row4_ptr), y
-        set_xreg_bits_if_zero_flag_off $01
+        set_xreg_low_nibble_from_row_ptrs  _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
 
         stx lookup_table_ptr
         ldy column_index
@@ -266,31 +247,11 @@ store_results_ptr = gol_ptr4
 
         ldx #0                                  ; New value for lookup_table_ptr is generated in 'X'.
 
-        lda (_lta_last_row_ptr), y
-        set_xreg_bits_if_zero_flag_off $80
-
-        lda (_lta_row2_ptr), y
-        set_xreg_bits_if_zero_flag_off $40
-
-        lda (_lta_row3_ptr), y
-        set_xreg_bits_if_zero_flag_off $20
-        
-        lda (_lta_row4_ptr), y
-        set_xreg_bits_if_zero_flag_off $10
+        set_xreg_high_nibble_from_row_ptrs _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
 
         iny ; Next column
 
-        lda (_lta_last_row_ptr), y
-        set_xreg_bits_if_zero_flag_off $08
-
-        lda (_lta_row2_ptr), y
-        set_xreg_bits_if_zero_flag_off $04
-
-        lda (_lta_row3_ptr), y
-        set_xreg_bits_if_zero_flag_off $02
-        
-        lda (_lta_row4_ptr), y
-        set_xreg_bits_if_zero_flag_off $01
+        set_xreg_low_nibble_from_row_ptrs  _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
 
         stx lookup_table_ptr
 
@@ -321,17 +282,7 @@ store_results_ptr = gol_ptr4
 
         ldy #128 ; Next column
 
-        lda (_lta_row1_ptr), y
-        set_xreg_bits_if_zero_flag_off $08
-
-        lda (_lta_row2_ptr), y
-        set_xreg_bits_if_zero_flag_off $04
-
-        lda (_lta_row3_ptr), y
-        set_xreg_bits_if_zero_flag_off $02
-        
-        lda (_lta_first_row_ptr), y
-        set_xreg_bits_if_zero_flag_off $01
+        set_xreg_low_nibble_from_row_ptrs  _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_first_row_ptr
 
         stx lookup_table_ptr+1
 
@@ -339,31 +290,11 @@ store_results_ptr = gol_ptr4
 
         ldx #0                              ; New value for lookup_table_ptr is generated in 'X'.
 
-        lda (_lta_row1_ptr), y
-        set_xreg_bits_if_zero_flag_off $80
-
-        lda (_lta_row2_ptr), y
-        set_xreg_bits_if_zero_flag_off $40
-
-        lda (_lta_row3_ptr), y
-        set_xreg_bits_if_zero_flag_off $20
-        
-        lda (_lta_first_row_ptr), y
-        set_xreg_bits_if_zero_flag_off $10
+        set_xreg_high_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_first_row_ptr
 
         iny ; Next column
 
-        lda (_lta_row1_ptr), y
-        set_xreg_bits_if_zero_flag_off $08
-
-        lda (_lta_row2_ptr), y
-        set_xreg_bits_if_zero_flag_off $04
-
-        lda (_lta_row3_ptr), y
-        set_xreg_bits_if_zero_flag_off $02
-        
-        lda (_lta_first_row_ptr), y
-        set_xreg_bits_if_zero_flag_off $01
+        set_xreg_low_nibble_from_row_ptrs  _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_first_row_ptr
 
         stx lookup_table_ptr
 
@@ -373,32 +304,12 @@ store_results_ptr = gol_ptr4
 
         ldx #0                                  ; New value for lookup_table_ptr is generated in 'X'.
 
-        lda (_lta_row1_ptr), y
-        set_xreg_bits_if_zero_flag_off $80
-
-        lda (_lta_row2_ptr), y
-        set_xreg_bits_if_zero_flag_off $40
-
-        lda (_lta_row3_ptr), y
-        set_xreg_bits_if_zero_flag_off $20
-        
-        lda (_lta_first_row_ptr), y
-        set_xreg_bits_if_zero_flag_off $10
+        set_xreg_high_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_first_row_ptr
 
         sty column_index    ; TODO : Figure out exact y-value so that we don't have to store then load.
         ldy #128
 
-        lda (_lta_row1_ptr), y
-        set_xreg_bits_if_zero_flag_off $08
-
-        lda (_lta_row2_ptr), y
-        set_xreg_bits_if_zero_flag_off $04
-
-        lda (_lta_row3_ptr), y
-        set_xreg_bits_if_zero_flag_off $02
-        
-        lda (_lta_first_row_ptr), y
-        set_xreg_bits_if_zero_flag_off $01
+        set_xreg_low_nibble_from_row_ptrs  _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_first_row_ptr
 
         stx lookup_table_ptr
         ldy column_index
@@ -410,31 +321,11 @@ store_results_ptr = gol_ptr4
 
         ldx #0                                  ; New value for lookup_table_ptr is generated in 'X'.
 
-        lda (_lta_row1_ptr), y
-        set_xreg_bits_if_zero_flag_off $80
-
-        lda (_lta_row2_ptr), y
-        set_xreg_bits_if_zero_flag_off $40
-
-        lda (_lta_row3_ptr), y
-        set_xreg_bits_if_zero_flag_off $20
-        
-        lda (_lta_first_row_ptr), y
-        set_xreg_bits_if_zero_flag_off $10
+        set_xreg_high_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_first_row_ptr
 
         iny ; Next column
 
-        lda (_lta_row1_ptr), y
-        set_xreg_bits_if_zero_flag_off $08
-
-        lda (_lta_row2_ptr), y
-        set_xreg_bits_if_zero_flag_off $04
-
-        lda (_lta_row3_ptr), y
-        set_xreg_bits_if_zero_flag_off $02
-        
-        lda (_lta_first_row_ptr), y
-        set_xreg_bits_if_zero_flag_off $01
+        set_xreg_low_nibble_from_row_ptrs  _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_first_row_ptr
 
         stx lookup_table_ptr
 
@@ -473,17 +364,7 @@ store_results_ptr = gol_ptr4
             ldy #0 ; Next column
         .endif
 
-        lda (_lta_row1_ptr), y
-        set_xreg_bits_if_zero_flag_off $08
-
-        lda (_lta_row2_ptr), y
-        set_xreg_bits_if_zero_flag_off $04
-
-        lda (_lta_row3_ptr), y
-        set_xreg_bits_if_zero_flag_off $02
-        
-        lda (_lta_row4_ptr), y
-        set_xreg_bits_if_zero_flag_off $01
+        set_xreg_low_nibble_from_row_ptrs  _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
 
         stx lookup_table_ptr+1
 
@@ -491,31 +372,11 @@ store_results_ptr = gol_ptr4
 
         ldx #0                              ; New value for lookup_table_ptr is generated in 'X'.
 
-        lda (_lta_row1_ptr), y
-        set_xreg_bits_if_zero_flag_off $80
-
-        lda (_lta_row2_ptr), y
-        set_xreg_bits_if_zero_flag_off $40
-
-        lda (_lta_row3_ptr), y
-        set_xreg_bits_if_zero_flag_off $20
-        
-        lda (_lta_row4_ptr), y
-        set_xreg_bits_if_zero_flag_off $10
+        set_xreg_high_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
 
         iny ; Next column
 
-        lda (_lta_row1_ptr), y
-        set_xreg_bits_if_zero_flag_off $08
-
-        lda (_lta_row2_ptr), y
-        set_xreg_bits_if_zero_flag_off $04
-
-        lda (_lta_row3_ptr), y
-        set_xreg_bits_if_zero_flag_off $02
-        
-        lda (_lta_row4_ptr), y
-        set_xreg_bits_if_zero_flag_off $01
+        set_xreg_low_nibble_from_row_ptrs  _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
 
         stx lookup_table_ptr
 
@@ -525,17 +386,7 @@ store_results_ptr = gol_ptr4
 
         ldx #0                                  ; New value for lookup_table_ptr is generated in 'X'.
 
-        lda (_lta_row1_ptr), y
-        set_xreg_bits_if_zero_flag_off $80
-
-        lda (_lta_row2_ptr), y
-        set_xreg_bits_if_zero_flag_off $40
-
-        lda (_lta_row3_ptr), y
-        set_xreg_bits_if_zero_flag_off $20
-        
-        lda (_lta_row4_ptr), y
-        set_xreg_bits_if_zero_flag_off $10
+        set_xreg_high_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
 
         sty column_index    ; TODO : Figure out exact offset
         .if use_long_y_offset
@@ -544,17 +395,7 @@ store_results_ptr = gol_ptr4
             ldy #0
         .endif
 
-        lda (_lta_row1_ptr), y
-        set_xreg_bits_if_zero_flag_off $08
-
-        lda (_lta_row2_ptr), y
-        set_xreg_bits_if_zero_flag_off $04
-
-        lda (_lta_row3_ptr), y
-        set_xreg_bits_if_zero_flag_off $02
-        
-        lda (_lta_row4_ptr), y
-        set_xreg_bits_if_zero_flag_off $01
+        set_xreg_low_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
 
         stx lookup_table_ptr
         ldy column_index
@@ -566,31 +407,11 @@ store_results_ptr = gol_ptr4
 
         ldx #0                                  ; New value for lookup_table_ptr is generated in 'X'.
 
-        lda (_lta_row1_ptr), y
-        set_xreg_bits_if_zero_flag_off $80
-
-        lda (_lta_row2_ptr), y
-        set_xreg_bits_if_zero_flag_off $40
-
-        lda (_lta_row3_ptr), y
-        set_xreg_bits_if_zero_flag_off $20
-        
-        lda (_lta_row4_ptr), y
-        set_xreg_bits_if_zero_flag_off $10
+        set_xreg_high_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
 
         iny ; Next column
 
-        lda (_lta_row1_ptr), y
-        set_xreg_bits_if_zero_flag_off $08
-
-        lda (_lta_row2_ptr), y
-        set_xreg_bits_if_zero_flag_off $04
-
-        lda (_lta_row3_ptr), y
-        set_xreg_bits_if_zero_flag_off $02
-        
-        lda (_lta_row4_ptr), y
-        set_xreg_bits_if_zero_flag_off $01
+        set_xreg_low_nibble_from_row_ptrs  _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
 
         stx lookup_table_ptr
 
