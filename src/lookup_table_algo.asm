@@ -23,6 +23,7 @@
 .include "lib.inc"
 .include "zeropage.inc"
 
+.feature c_comments
 .linecont + ; Allow line continuation with '\'.
 
 .segment "ZPVARS" : zeropage
@@ -85,11 +86,12 @@ store_results_ptr = gol_ptr4
 .endproc
 
 ;;-------------------------------------------------------------------------------------------------
-;; Routine : _lta_next_batch_row
+;; Routine : _lta_increment_pointers
 ;;-------------------------------------------------------------------------------------------------
-;; Increments the row pointers so that they point to the next batch row.
+;; Increments the row pointers by 256 bytes.
+;; Incremental steps of 128 bytes is done with the long Y offset.
 ;;-------------------------------------------------------------------------------------------------
-.proc _lta_next_batch_row
+.proc _lta_increment_pointers
     inc _lta_row1_ptr+1
     inc _lta_row2_ptr+1
     inc _lta_row3_ptr+1
@@ -152,31 +154,47 @@ store_results_ptr = gol_ptr4
 .endmacro
 
 .macro set_xreg_low_nibble_from_row_ptrs ptr1, ptr2, ptr3, ptr4
+    .ifnblank ptr1
     lda (ptr1), y
     set_xreg_bits_if_zero_flag_off $08
+    .endif
 
+    .ifnblank ptr2
     lda (ptr2), y
     set_xreg_bits_if_zero_flag_off $04
+    .endif
 
+    .ifnblank ptr3
     lda (ptr3), y
     set_xreg_bits_if_zero_flag_off $02
+    .endif
     
+    .ifnblank ptr4
     lda (ptr4), y
     set_xreg_bits_if_zero_flag_off $01
+    .endif
 .endmacro
 
 .macro set_xreg_high_nibble_from_row_ptrs ptr1, ptr2, ptr3, ptr4
+    .ifnblank ptr1
     lda (ptr1), y
     set_xreg_bits_if_zero_flag_off $80
+    .endif
 
+    .ifnblank ptr2
     lda (ptr2), y
     set_xreg_bits_if_zero_flag_off $40
+    .endif
 
+    .ifnblank ptr3
     lda (ptr3), y
     set_xreg_bits_if_zero_flag_off $20
+    .endif
     
+    .ifnblank ptr4
     lda (ptr4), y
     set_xreg_bits_if_zero_flag_off $10
+    .endif
 .endmacro
 
 .macro _lta_calc_batch_macro first_column, last_column, first_row, last_row, ppu_buffer_index, use_long_y_offset
@@ -187,41 +205,25 @@ store_results_ptr = gol_ptr4
     .if first_column ; Upper-left corner
         ; Get lookup table bank number
         ldx #0
-
         ldy #63 
-        lda (_lta_last_row_ptr), y          ; Last column of last row
-        set_xreg_bits_if_zero_flag_off $04
-
-        lda (_lta_row2_ptr), y              ; Last column of first row
-        set_xreg_bits_if_zero_flag_off $02
-
-        lda (_lta_row3_ptr), y              ; Last column of second row
-        set_xreg_bits_if_zero_flag_off $01
-
-        stx MMC3_BANK_DATA                  ; X now contains lookup table bank number
+        set_xreg_low_nibble_from_row_ptrs /*skip*/, _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr
+        stx MMC3_BANK_DATA
 
         ldx #$80                            ; Lookup table chunk is swapped in at 0x8000.
 
-        ; Get lookup table pointer
-        lda (_lta_row4_ptr), y              ; Last column of third row
-        set_xreg_bits_if_zero_flag_off $10
-
+        ; Get value of lookup_table_ptr (high byte)
+        set_xreg_high_nibble_from_row_ptrs /*skip*/, /*skip*/, /*skip*/, _lta_row4_ptr
         ldy #0 ; Next column
-
         set_xreg_low_nibble_from_row_ptrs _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
-
         stx lookup_table_ptr+1
 
-        iny ; Next column
+        iny
 
-        ldx #0                              ; New value for lookup_table_ptr is generated in 'X'.
-
+        ; Get value of lookup_table_ptr (low byte) based on bits in two last columns of this batch.
+        ldx #0
         set_xreg_high_nibble_from_row_ptrs _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
-
-        iny ; Next column
-
+        iny
         set_xreg_low_nibble_from_row_ptrs  _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
-
         stx lookup_table_ptr
 
         load_lookup_results_and_store_to_grid ppu_buffer_index
@@ -245,14 +247,11 @@ store_results_ptr = gol_ptr4
     .else ; First row (generic)
         optimized_read_of_lookup_table_ptr_hi
 
-        ldx #0                                  ; New value for lookup_table_ptr is generated in 'X'.
-
+        ; Get value of lookup_table_ptr (low byte) based on bits in two last columns of this batch.
+        ldx #0
         set_xreg_high_nibble_from_row_ptrs _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
-
-        iny ; Next column
-
+        iny
         set_xreg_low_nibble_from_row_ptrs  _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
-
         stx lookup_table_ptr
 
         load_lookup_results_and_store_to_grid ppu_buffer_index
@@ -261,18 +260,9 @@ store_results_ptr = gol_ptr4
     .if first_column ; Lower-left corner
         ; Get lookup table bank number
         ldx #0
-
         ldy #191
-        lda (_lta_row1_ptr), y
-        set_xreg_bits_if_zero_flag_off $04
-
-        lda (_lta_row2_ptr), y
-        set_xreg_bits_if_zero_flag_off $02
-
-        lda (_lta_row3_ptr), y
-        set_xreg_bits_if_zero_flag_off $01
-
-        stx MMC3_BANK_DATA                  ; X now contains lookup table bank number
+        set_xreg_low_nibble_from_row_ptrs /*skip*/, _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr
+        stx MMC3_BANK_DATA
 
         ldx #$80                            ; Lookup table chunk is swapped in at 0x8000.
 
@@ -286,16 +276,13 @@ store_results_ptr = gol_ptr4
 
         stx lookup_table_ptr+1
 
-        iny ; Next column
+        iny
 
-        ldx #0                              ; New value for lookup_table_ptr is generated in 'X'.
-
+        ; Get value of lookup_table_ptr (low byte) based on bits in two last columns of this batch.
+        ldx #0
         set_xreg_high_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_first_row_ptr
-
-        iny ; Next column
-
+        iny
         set_xreg_low_nibble_from_row_ptrs  _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_first_row_ptr
-
         stx lookup_table_ptr
 
         load_lookup_results_and_store_to_grid ppu_buffer_index
@@ -319,14 +306,11 @@ store_results_ptr = gol_ptr4
     .else ; Last row (generic)
         optimized_read_of_lookup_table_ptr_hi
 
-        ldx #0                                  ; New value for lookup_table_ptr is generated in 'X'.
-
+        ; Get value of lookup_table_ptr (low byte) based on bits in two last columns of this batch.
+        ldx #0
         set_xreg_high_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_first_row_ptr
-
-        iny ; Next column
-
+        iny
         set_xreg_low_nibble_from_row_ptrs  _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_first_row_ptr
-
         stx lookup_table_ptr
 
         load_lookup_results_and_store_to_grid ppu_buffer_index
@@ -335,22 +319,13 @@ store_results_ptr = gol_ptr4
     .if first_column ; Middle row, first column
         ; Get lookup table bank number
         ldx #0
-
         .if use_long_y_offset
             ldy #191
         .else
             ldy #63
         .endif
-        lda (_lta_row1_ptr), y          ; Last column of last row
-        set_xreg_bits_if_zero_flag_off $04
-
-        lda (_lta_row2_ptr), y              ; Last column of first row
-        set_xreg_bits_if_zero_flag_off $02
-
-        lda (_lta_row3_ptr), y              ; Last column of second row
-        set_xreg_bits_if_zero_flag_off $01
-
-        stx MMC3_BANK_DATA                  ; X now contains lookup table bank number
+        set_xreg_low_nibble_from_row_ptrs /*skip*/, _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr
+        stx MMC3_BANK_DATA
 
         ldx #$80                            ; Lookup table chunk is swapped in at 0x8000.
 
@@ -368,33 +343,29 @@ store_results_ptr = gol_ptr4
 
         stx lookup_table_ptr+1
 
-        iny ; Next column
+        iny
 
-        ldx #0                              ; New value for lookup_table_ptr is generated in 'X'.
-
+        ; Get value of lookup_table_ptr (low byte) based on bits in two last columns of this batch.
+        ldx #0
         set_xreg_high_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
-
-        iny ; Next column
-
+        iny
         set_xreg_low_nibble_from_row_ptrs  _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
-
         stx lookup_table_ptr
 
         load_lookup_results_and_store_to_grid ppu_buffer_index
     .elseif last_column ; Middle row, last column
         optimized_read_of_lookup_table_ptr_hi
 
-        ldx #0                                  ; New value for lookup_table_ptr is generated in 'X'.
-
+        ldx #0
         set_xreg_high_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
 
         sty column_index    ; TODO : Figure out exact offset
+
         .if use_long_y_offset
             ldy #128
         .else
             ldy #0
         .endif
-
         set_xreg_low_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
 
         stx lookup_table_ptr
@@ -405,14 +376,11 @@ store_results_ptr = gol_ptr4
     .else ; Middle row (generic)
         optimized_read_of_lookup_table_ptr_hi
 
-        ldx #0                                  ; New value for lookup_table_ptr is generated in 'X'.
-
+        ; Get value of lookup_table_ptr (low byte) based on bits in two last columns of this batch.
+        ldx #0
         set_xreg_high_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
-
-        iny ; Next column
-
+        iny
         set_xreg_low_nibble_from_row_ptrs  _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
-
         stx lookup_table_ptr
 
         load_lookup_results_and_store_to_grid ppu_buffer_index
@@ -436,8 +404,7 @@ store_results_ptr = gol_ptr4
     ; 0 0
     dey
     dey
-    lda #1
-    sta (_lta_work_grid_row1_ptr), y
+    sta (_lta_work_grid_row1_ptr), y ; Acc. already contains a non-zero value (#1)
     iny
 
     rts
@@ -448,8 +415,7 @@ store_results_ptr = gol_ptr4
     ; 1 0
     dey
     dey
-    lda #1
-    sta (_lta_work_grid_row2_ptr), y
+    sta (_lta_work_grid_row2_ptr), y ; Acc. already contains a non-zero value (#2)
     iny
 
     rts
@@ -460,9 +426,8 @@ store_results_ptr = gol_ptr4
     ; 1 0
     dey
     dey
-    lda #1
-    sta (_lta_work_grid_row1_ptr), y
-    sta (_lta_work_grid_row2_ptr), y
+    sta (_lta_work_grid_row1_ptr), y ; Acc. already contains a non-zero value (#3)
+    sta (_lta_work_grid_row2_ptr), y ; Acc. already contains a non-zero value (#3)
     iny
 
     rts
@@ -472,8 +437,7 @@ store_results_ptr = gol_ptr4
     ; 0 1
     ; 0 0
     dey
-    lda #1
-    sta (_lta_work_grid_row1_ptr), y
+    sta (_lta_work_grid_row1_ptr), y ; Acc. already contains a non-zero value (#4)
 
     rts
 .endproc
@@ -483,10 +447,9 @@ store_results_ptr = gol_ptr4
     ; 0 0
     dey
     dey
-    lda #1
-    sta (_lta_work_grid_row1_ptr), y
+    sta (_lta_work_grid_row1_ptr), y ; Acc. already contains a non-zero value (#5)
     iny
-    sta (_lta_work_grid_row1_ptr), y
+    sta (_lta_work_grid_row1_ptr), y ; Acc. already contains a non-zero value (#5)
 
     rts
 .endproc
@@ -496,10 +459,9 @@ store_results_ptr = gol_ptr4
     ; 1 0
     dey
     dey
-    lda #1
-    sta (_lta_work_grid_row2_ptr), y
+    sta (_lta_work_grid_row2_ptr), y ; Acc. already contains a non-zero value (#6)
     iny
-    sta (_lta_work_grid_row1_ptr), y
+    sta (_lta_work_grid_row1_ptr), y ; Acc. already contains a non-zero value (#6)
 
     rts
 .endproc
@@ -509,11 +471,10 @@ store_results_ptr = gol_ptr4
     ; 1 0
     dey
     dey
-    lda #1
-    sta (_lta_work_grid_row1_ptr), y
-    sta (_lta_work_grid_row2_ptr), y
+    sta (_lta_work_grid_row1_ptr), y ; Acc. already contains a non-zero value (#7)
+    sta (_lta_work_grid_row2_ptr), y ; Acc. already contains a non-zero value (#7)
     iny
-    sta (_lta_work_grid_row1_ptr), y
+    sta (_lta_work_grid_row1_ptr), y ; Acc. already contains a non-zero value (#7)
 
     rts
 .endproc
@@ -522,8 +483,7 @@ store_results_ptr = gol_ptr4
     ; 0 0
     ; 0 1
     dey
-    lda #1
-    sta (_lta_work_grid_row2_ptr), y
+    sta (_lta_work_grid_row2_ptr), y ; Acc. already contains a non-zero value (#8)
 
     rts
 .endproc
@@ -533,10 +493,9 @@ store_results_ptr = gol_ptr4
     ; 0 1
     dey
     dey
-    lda #1
-    sta (_lta_work_grid_row1_ptr), y
+    sta (_lta_work_grid_row1_ptr), y ; Acc. already contains a non-zero value (#9)
     iny
-    sta (_lta_work_grid_row2_ptr), y
+    sta (_lta_work_grid_row2_ptr), y ; Acc. already contains a non-zero value (#9)
 
     rts
 .endproc
@@ -546,10 +505,9 @@ store_results_ptr = gol_ptr4
     ; 1 1
     dey
     dey
-    lda #1
-    sta (_lta_work_grid_row2_ptr), y
+    sta (_lta_work_grid_row2_ptr), y ; Acc. already contains a non-zero value (#10)
     iny
-    sta (_lta_work_grid_row2_ptr), y
+    sta (_lta_work_grid_row2_ptr), y ; Acc. already contains a non-zero value (#10)
 
     rts
 .endproc
@@ -559,11 +517,10 @@ store_results_ptr = gol_ptr4
     ; 1 1
     dey
     dey
-    lda #1
-    sta (_lta_work_grid_row1_ptr), y
-    sta (_lta_work_grid_row2_ptr), y
+    sta (_lta_work_grid_row1_ptr), y ; Acc. already contains a non-zero value (#11)
+    sta (_lta_work_grid_row2_ptr), y ; Acc. already contains a non-zero value (#11)
     iny
-    sta (_lta_work_grid_row2_ptr), y
+    sta (_lta_work_grid_row2_ptr), y ; Acc. already contains a non-zero value (#11)
 
     rts
 .endproc
@@ -572,9 +529,8 @@ store_results_ptr = gol_ptr4
     ; 0 1
     ; 0 1
     dey
-    lda #1
-    sta (_lta_work_grid_row1_ptr), y
-    sta (_lta_work_grid_row2_ptr), y
+    sta (_lta_work_grid_row1_ptr), y ; Acc. already contains a non-zero value (#12)
+    sta (_lta_work_grid_row2_ptr), y ; Acc. already contains a non-zero value (#12)
 
     rts
 .endproc
@@ -584,11 +540,10 @@ store_results_ptr = gol_ptr4
     ; 0 1
     dey
     dey
-    lda #1
-    sta (_lta_work_grid_row1_ptr), y
+    sta (_lta_work_grid_row1_ptr), y ; Acc. already contains a non-zero value (#13)
     iny
-    sta (_lta_work_grid_row1_ptr), y
-    sta (_lta_work_grid_row2_ptr), y
+    sta (_lta_work_grid_row1_ptr), y ; Acc. already contains a non-zero value (#13)
+    sta (_lta_work_grid_row2_ptr), y ; Acc. already contains a non-zero value (#13)
 
     rts
 .endproc
@@ -598,11 +553,10 @@ store_results_ptr = gol_ptr4
     ; 1 1
     dey
     dey
-    lda #1
-    sta (_lta_work_grid_row2_ptr), y
+    sta (_lta_work_grid_row2_ptr), y ; Acc. already contains a non-zero value (#14)
     iny
-    sta (_lta_work_grid_row1_ptr), y
-    sta (_lta_work_grid_row2_ptr), y
+    sta (_lta_work_grid_row1_ptr), y ; Acc. already contains a non-zero value (#14)
+    sta (_lta_work_grid_row2_ptr), y ; Acc. already contains a non-zero value (#14)
 
     rts
 .endproc
@@ -612,12 +566,11 @@ store_results_ptr = gol_ptr4
     ; 1 1
     dey
     dey
-    lda #1
-    sta (_lta_work_grid_row1_ptr), y
-    sta (_lta_work_grid_row2_ptr), y
+    sta (_lta_work_grid_row1_ptr), y ; Acc. already contains a non-zero value (#15)
+    sta (_lta_work_grid_row2_ptr), y ; Acc. already contains a non-zero value (#15)
     iny
-    sta (_lta_work_grid_row1_ptr), y
-    sta (_lta_work_grid_row2_ptr), y
+    sta (_lta_work_grid_row1_ptr), y ; Acc. already contains a non-zero value (#15)
+    sta (_lta_work_grid_row2_ptr), y ; Acc. already contains a non-zero value (#15)
 
     rts
 .endproc
@@ -773,7 +726,7 @@ store_results_ptr = gol_ptr4
             calculate_batch_row_func_calls .ident(.sprintf("_lta_calc_batch_first_column_buf%d_long_y_offset", buffer_number)), \
                                            .ident(.sprintf("_lta_calc_batch_generic_buf%d_long_y_offset", buffer_number)), \
                                            .ident(.sprintf("_lta_calc_batch_last_column_buf%d_long_y_offset", buffer_number))
-            jsr _lta_next_batch_row
+            jsr _lta_increment_pointers
         .else
             calculate_batch_row_func_calls .ident(.sprintf("_lta_calc_batch_first_column_buf%d", buffer_number)), \
                                            .ident(.sprintf("_lta_calc_batch_generic_buf%d", buffer_number)), \
