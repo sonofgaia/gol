@@ -28,6 +28,9 @@
 
 .segment "ZPVARS" : zeropage
 
+lookup_table_ptr: .res 2
+column_index:     .res 1
+
 _lta_row1_ptr: .res 2
 _lta_row2_ptr: .res 2
 _lta_row3_ptr: .res 2
@@ -112,6 +115,8 @@ store_results_ptr = gol_ptr4
 
 .macro add_tile_to_ppu_write_buffer ppu_buffer_index
     ldx _grid_draw__ppu_copy_buffer_write_index
+    inc _grid_draw__ppu_copy_buffer_write_index
+
     .if ppu_buffer_index = 0
         sta _grid_draw__ppu_copy_buffer1, x
     .elseif ppu_buffer_index = 1
@@ -119,7 +124,6 @@ store_results_ptr = gol_ptr4
     .else
         sta _grid_draw__ppu_copy_buffer3, x
     .endif
-    inc _grid_draw__ppu_copy_buffer_write_index
 .endmacro
 
 .macro load_lookup_results_and_store_to_grid ppu_buffer_index
@@ -195,197 +199,6 @@ store_results_ptr = gol_ptr4
     lda (ptr4), y
     set_xreg_bits_if_zero_flag_off $10
     .endif
-.endmacro
-
-.macro _lta_calc_batch_macro first_column, last_column, first_row, last_row, ppu_buffer_index, use_long_y_offset
-    lookup_table_ptr = gol_ptr1
-    column_index     = gol_tmp2
-
-.if first_row
-    .if first_column ; Upper-left corner
-        ; Get lookup table bank number
-        ldx #0
-        ldy #63 
-        set_xreg_low_nibble_from_row_ptrs /*skip*/, _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr
-        stx MMC3_BANK_DATA
-
-        ldx #$80                            ; Lookup table chunk is swapped in at 0x8000.
-
-        ; Get value of lookup_table_ptr (high byte)
-        set_xreg_high_nibble_from_row_ptrs /*skip*/, /*skip*/, /*skip*/, _lta_row4_ptr
-        ldy #0 ; Next column
-        set_xreg_low_nibble_from_row_ptrs _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
-        stx lookup_table_ptr+1
-
-        iny
-
-        ; Get value of lookup_table_ptr (low byte) based on bits in two last columns of this batch.
-        ldx #0
-        set_xreg_high_nibble_from_row_ptrs _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
-        iny
-        set_xreg_low_nibble_from_row_ptrs  _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
-        stx lookup_table_ptr
-
-        load_lookup_results_and_store_to_grid ppu_buffer_index
-    .elseif last_column ; Upper-right corner
-        optimized_read_of_lookup_table_ptr_hi
-
-        ldx #0                                  ; New value for lookup_table_ptr is generated in 'X'.
-
-        set_xreg_high_nibble_from_row_ptrs _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
-
-        sty column_index ; TODO : Figure out exact Y-value here so we can load it later instead of storing then loading it.
-        ldy #0
-
-        set_xreg_low_nibble_from_row_ptrs  _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
-
-        stx lookup_table_ptr
-        ldy column_index
-        iny
-
-        load_lookup_results_and_store_to_grid ppu_buffer_index
-    .else ; First row (generic)
-        optimized_read_of_lookup_table_ptr_hi
-
-        ; Get value of lookup_table_ptr (low byte) based on bits in two last columns of this batch.
-        ldx #0
-        set_xreg_high_nibble_from_row_ptrs _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
-        iny
-        set_xreg_low_nibble_from_row_ptrs  _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
-        stx lookup_table_ptr
-
-        load_lookup_results_and_store_to_grid ppu_buffer_index
-    .endif
-.elseif last_row
-    .if first_column ; Lower-left corner
-        ; Get lookup table bank number
-        ldx #0
-        ldy #191
-        set_xreg_low_nibble_from_row_ptrs /*skip*/, _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr
-        stx MMC3_BANK_DATA
-
-        ldx #$80                            ; Lookup table chunk is swapped in at 0x8000.
-
-        ; Get lookup table pointer
-        lda (_lta_first_row_ptr), y
-        set_xreg_bits_if_zero_flag_off $10
-
-        ldy #128 ; Next column
-
-        set_xreg_low_nibble_from_row_ptrs  _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_first_row_ptr
-
-        stx lookup_table_ptr+1
-
-        iny
-
-        ; Get value of lookup_table_ptr (low byte) based on bits in two last columns of this batch.
-        ldx #0
-        set_xreg_high_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_first_row_ptr
-        iny
-        set_xreg_low_nibble_from_row_ptrs  _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_first_row_ptr
-        stx lookup_table_ptr
-
-        load_lookup_results_and_store_to_grid ppu_buffer_index
-    .elseif last_column ; Lower-right corner
-        optimized_read_of_lookup_table_ptr_hi
-
-        ldx #0                                  ; New value for lookup_table_ptr is generated in 'X'.
-
-        set_xreg_high_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_first_row_ptr
-
-        sty column_index    ; TODO : Figure out exact y-value so that we don't have to store then load.
-        ldy #128
-
-        set_xreg_low_nibble_from_row_ptrs  _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_first_row_ptr
-
-        stx lookup_table_ptr
-        ldy column_index
-        iny
-
-        load_lookup_results_and_store_to_grid ppu_buffer_index
-    .else ; Last row (generic)
-        optimized_read_of_lookup_table_ptr_hi
-
-        ; Get value of lookup_table_ptr (low byte) based on bits in two last columns of this batch.
-        ldx #0
-        set_xreg_high_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_first_row_ptr
-        iny
-        set_xreg_low_nibble_from_row_ptrs  _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_first_row_ptr
-        stx lookup_table_ptr
-
-        load_lookup_results_and_store_to_grid ppu_buffer_index
-    .endif
-.else
-    .if first_column ; Middle row, first column
-        ; Get lookup table bank number
-        ldx #0
-        .if use_long_y_offset
-            ldy #191
-        .else
-            ldy #63
-        .endif
-        set_xreg_low_nibble_from_row_ptrs /*skip*/, _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr
-        stx MMC3_BANK_DATA
-
-        ldx #$80                            ; Lookup table chunk is swapped in at 0x8000.
-
-        ; Get lookup table pointer
-        lda (_lta_row4_ptr), y              ; Last column of third row
-        set_xreg_bits_if_zero_flag_off $10
-
-        .if use_long_y_offset
-            ldy #128 ; Next column
-        .else
-            ldy #0 ; Next column
-        .endif
-
-        set_xreg_low_nibble_from_row_ptrs  _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
-
-        stx lookup_table_ptr+1
-
-        iny
-
-        ; Get value of lookup_table_ptr (low byte) based on bits in two last columns of this batch.
-        ldx #0
-        set_xreg_high_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
-        iny
-        set_xreg_low_nibble_from_row_ptrs  _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
-        stx lookup_table_ptr
-
-        load_lookup_results_and_store_to_grid ppu_buffer_index
-    .elseif last_column ; Middle row, last column
-        optimized_read_of_lookup_table_ptr_hi
-
-        ldx #0
-        set_xreg_high_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
-
-        sty column_index    ; TODO : Figure out exact offset
-
-        .if use_long_y_offset
-            ldy #128
-        .else
-            ldy #0
-        .endif
-        set_xreg_low_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
-
-        stx lookup_table_ptr
-        ldy column_index
-        iny
-
-        load_lookup_results_and_store_to_grid ppu_buffer_index
-    .else ; Middle row (generic)
-        optimized_read_of_lookup_table_ptr_hi
-
-        ; Get value of lookup_table_ptr (low byte) based on bits in two last columns of this batch.
-        ldx #0
-        set_xreg_high_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
-        iny
-        set_xreg_low_nibble_from_row_ptrs  _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
-        stx lookup_table_ptr
-
-        load_lookup_results_and_store_to_grid ppu_buffer_index
-    .endif
-.endif
 .endmacro
 
 .segment "LTA_CODE2"
@@ -578,108 +391,245 @@ store_results_ptr = gol_ptr4
 .segment "LTA_CODE1"
 
 .proc _lta_calc_batch_upper_left_corner
-    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calc_batch_macro TRUE, FALSE, TRUE, FALSE, 0, FALSE
+    ; Get lookup table bank number
+    ldx #0
+    ldy #63 
+    set_xreg_low_nibble_from_row_ptrs /*skip*/, _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr
+    stx MMC3_BANK_DATA
+
+    ; Get value of lookup_table_ptr (high byte)
+    ldx #$80 ; Lookup table chunk is swapped in at 0x8000.
+    set_xreg_high_nibble_from_row_ptrs /*skip*/, /*skip*/, /*skip*/, _lta_row4_ptr
+    ldy #0 ; Next column
+    set_xreg_low_nibble_from_row_ptrs _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
+    stx lookup_table_ptr+1
+
+    iny
+
+    ; Get value of lookup_table_ptr (low byte) based on bits in two last columns of this batch.
+    ldx #0
+    set_xreg_high_nibble_from_row_ptrs _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
+    iny
+    set_xreg_low_nibble_from_row_ptrs  _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
+    stx lookup_table_ptr
+
+    load_lookup_results_and_store_to_grid 0
 .endproc
 
 .proc _lta_calc_batch_upper_right_corner
-    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calc_batch_macro FALSE, TRUE, TRUE, FALSE, 0, FALSE
+    optimized_read_of_lookup_table_ptr_hi
+
+    ldx #0                                  ; New value for lookup_table_ptr is generated in 'X'.
+
+    set_xreg_high_nibble_from_row_ptrs _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
+
+    sty column_index ; TODO : Figure out exact Y-value here so we can load it later instead of storing then loading it.
+    ldy #0
+
+    set_xreg_low_nibble_from_row_ptrs  _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
+
+    stx lookup_table_ptr
+    ldy column_index
+    iny
+
+    load_lookup_results_and_store_to_grid 0
 .endproc
 
 .proc _lta_calc_batch_first_row
-    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calc_batch_macro FALSE, FALSE, TRUE, FALSE, 0, FALSE
+    optimized_read_of_lookup_table_ptr_hi
+
+    ; Get value of lookup_table_ptr (low byte) based on bits in two last columns of this batch.
+    ldx #0
+    set_xreg_high_nibble_from_row_ptrs _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
+    iny
+    set_xreg_low_nibble_from_row_ptrs  _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
+    stx lookup_table_ptr
+
+    load_lookup_results_and_store_to_grid 0
 .endproc
 
 .proc _lta_calc_batch_lower_left_corner
-    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calc_batch_macro TRUE, FALSE, FALSE, TRUE, 2, FALSE
+    ; Get lookup table bank number
+    ldx #0
+    ldy #191
+    set_xreg_low_nibble_from_row_ptrs /*skip*/, _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr
+    stx MMC3_BANK_DATA
+
+    ; Get lookup table pointer
+    ldx #$80 ; Lookup table chunk is swapped in at 0x8000.
+    set_xreg_high_nibble_from_row_ptrs /*skip*/, /*skip*/, /*skip*/, _lta_first_row_ptr
+    ldy #128
+    set_xreg_low_nibble_from_row_ptrs  _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_first_row_ptr
+    stx lookup_table_ptr+1
+
+    iny
+
+    ; Get value of lookup_table_ptr (low byte) based on bits in two last columns of this batch.
+    ldx #0
+    set_xreg_high_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_first_row_ptr
+    iny
+    set_xreg_low_nibble_from_row_ptrs  _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_first_row_ptr
+    stx lookup_table_ptr
+
+    load_lookup_results_and_store_to_grid 2
 .endproc
 
 .proc _lta_calc_batch_lower_right_corner
-    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calc_batch_macro FALSE, TRUE, FALSE, TRUE, 2, FALSE
+    optimized_read_of_lookup_table_ptr_hi
+
+    ldx #0
+    set_xreg_high_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_first_row_ptr
+    sty column_index    ; TODO : Figure out exact y-value so that we don't have to store then load.
+    ldy #128
+    set_xreg_low_nibble_from_row_ptrs  _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_first_row_ptr
+    stx lookup_table_ptr
+
+    ldy column_index
+    iny
+
+    load_lookup_results_and_store_to_grid 2
 .endproc
 
 .proc _lta_calc_batch_last_row
-    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calc_batch_macro FALSE, FALSE, FALSE, TRUE, 2, FALSE
+    optimized_read_of_lookup_table_ptr_hi
+
+    ; Get value of lookup_table_ptr (low byte) based on bits in two last columns of this batch.
+    ldx #0
+    set_xreg_high_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_first_row_ptr
+    iny
+    set_xreg_low_nibble_from_row_ptrs  _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_first_row_ptr
+    stx lookup_table_ptr
+
+    load_lookup_results_and_store_to_grid 2
 .endproc
 
+.macro _lta_calc_batch_first_column_macro ppu_buffer_index, use_long_y_offset
+    ; Get lookup table bank number
+    ldx #0
+    .if use_long_y_offset
+        ldy #191
+    .else
+        ldy #63
+    .endif
+    set_xreg_low_nibble_from_row_ptrs /*skip*/, _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr
+    stx MMC3_BANK_DATA
+
+    ; Get lookup table pointer
+    ldx #$80 ; Lookup table chunk is swapped in at 0x8000.
+    set_xreg_high_nibble_from_row_ptrs /*skip*/, /*skip*/, /*skip*/, _lta_row4_ptr
+    .if use_long_y_offset
+        ldy #128 ; Next column
+    .else
+        ldy #0 ; Next column
+    .endif
+    set_xreg_low_nibble_from_row_ptrs  _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
+    stx lookup_table_ptr+1
+
+    iny
+
+    ; Get value of lookup_table_ptr (low byte) based on bits in two last columns of this batch.
+    ldx #0
+    set_xreg_high_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
+    iny
+    set_xreg_low_nibble_from_row_ptrs  _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
+    stx lookup_table_ptr
+
+    load_lookup_results_and_store_to_grid ppu_buffer_index
+.endmacro
+
 .proc _lta_calc_batch_first_column_buf1
-    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calc_batch_macro TRUE, FALSE, FALSE, FALSE, 0, FALSE
+    _lta_calc_batch_first_column_macro 0, FALSE
 .endproc
 
 .proc _lta_calc_batch_first_column_buf2
-    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calc_batch_macro TRUE, FALSE, FALSE, FALSE, 1, FALSE
+    _lta_calc_batch_first_column_macro 1, FALSE
 .endproc
 
 .proc _lta_calc_batch_first_column_buf3
-    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calc_batch_macro TRUE, FALSE, FALSE, FALSE, 2, FALSE
-.endproc
-
-.proc _lta_calc_batch_last_column_buf1
-    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calc_batch_macro FALSE, TRUE, FALSE, FALSE, 0, FALSE
-.endproc
-
-.proc _lta_calc_batch_last_column_buf2
-    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calc_batch_macro FALSE, TRUE, FALSE, FALSE, 1, FALSE
-.endproc
-
-.proc _lta_calc_batch_last_column_buf3
-    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calc_batch_macro FALSE, TRUE, FALSE, FALSE, 2, FALSE
-.endproc
-
-.proc _lta_calc_batch_generic_buf1
-    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calc_batch_macro FALSE, FALSE, FALSE, FALSE, 0, FALSE
-.endproc
-
-.proc _lta_calc_batch_generic_buf2
-    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calc_batch_macro FALSE, FALSE, FALSE, FALSE, 1, FALSE
-.endproc
-
-.proc _lta_calc_batch_generic_buf3
-    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calc_batch_macro FALSE, FALSE, FALSE, FALSE, 2, FALSE
+    _lta_calc_batch_first_column_macro 2, FALSE
 .endproc
 
 .proc _lta_calc_batch_first_column_buf1_long_y_offset
-    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calc_batch_macro TRUE, FALSE, FALSE, FALSE, 0, TRUE
+    _lta_calc_batch_first_column_macro 0, TRUE
 .endproc
 
 .proc _lta_calc_batch_first_column_buf2_long_y_offset
-    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calc_batch_macro TRUE, FALSE, FALSE, FALSE, 1, TRUE
+    _lta_calc_batch_first_column_macro 1, TRUE
 .endproc
 
 .proc _lta_calc_batch_first_column_buf3_long_y_offset
-    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calc_batch_macro TRUE, FALSE, FALSE, FALSE, 2, TRUE
+    _lta_calc_batch_first_column_macro 2, TRUE
+.endproc
+
+.macro _lta_calc_batch_last_column_macro ppu_buffer_index, use_long_y_offset
+    optimized_read_of_lookup_table_ptr_hi
+
+    ldx #0
+    set_xreg_high_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
+
+    sty column_index    ; TODO : Figure out exact offset
+
+    .if use_long_y_offset
+        ldy #128
+    .else
+        ldy #0
+    .endif
+    set_xreg_low_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
+
+    stx lookup_table_ptr
+    ldy column_index
+    iny
+
+    load_lookup_results_and_store_to_grid ppu_buffer_index
+.endmacro
+
+.proc _lta_calc_batch_last_column_buf1
+    _lta_calc_batch_last_column_macro 0, FALSE
+.endproc
+
+.proc _lta_calc_batch_last_column_buf2
+    _lta_calc_batch_last_column_macro 1, FALSE
+.endproc
+
+.proc _lta_calc_batch_last_column_buf3
+    _lta_calc_batch_last_column_macro 2, FALSE
 .endproc
 
 .proc _lta_calc_batch_last_column_buf1_long_y_offset
-    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calc_batch_macro FALSE, TRUE, FALSE, FALSE, 0, TRUE
+    _lta_calc_batch_last_column_macro 0, TRUE
 .endproc
 
 .proc _lta_calc_batch_last_column_buf2_long_y_offset
-    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calc_batch_macro FALSE, TRUE, FALSE, FALSE, 1, TRUE
+    _lta_calc_batch_last_column_macro 1, TRUE
 .endproc
 
 .proc _lta_calc_batch_last_column_buf3_long_y_offset
-    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calc_batch_macro FALSE, TRUE, FALSE, FALSE, 2, TRUE
+    _lta_calc_batch_last_column_macro 2, TRUE
+.endproc
+
+.macro _lta_calc_batch_generic_macro ppu_buffer_index
+    optimized_read_of_lookup_table_ptr_hi
+
+    ; Get value of lookup_table_ptr (low byte) based on bits in two last columns of this batch.
+    ldx #0
+    set_xreg_high_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
+    iny
+    set_xreg_low_nibble_from_row_ptrs  _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
+    stx lookup_table_ptr
+
+    load_lookup_results_and_store_to_grid ppu_buffer_index
+.endmacro
+
+.proc _lta_calc_batch_generic_buf1
+    _lta_calc_batch_generic_macro 0
+.endproc
+
+.proc _lta_calc_batch_generic_buf2
+    _lta_calc_batch_generic_macro 1
+.endproc
+
+.proc _lta_calc_batch_generic_buf3
+    _lta_calc_batch_generic_macro 2
 .endproc
 
 .macro calculate_batch_row_func_calls func1, func2, func3
