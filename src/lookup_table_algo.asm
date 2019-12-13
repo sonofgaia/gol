@@ -682,21 +682,6 @@ store_results_ptr = gol_ptr4
     _lta_calc_batch_macro FALSE, TRUE, FALSE, FALSE, 2, TRUE
 .endproc
 
-.proc _lta_calc_batch_generic_buf1_long_y_offset
-    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calc_batch_macro FALSE, FALSE, FALSE, FALSE, 0, TRUE
-.endproc
-
-.proc _lta_calc_batch_generic_buf2_long_y_offset
-    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calc_batch_macro FALSE, FALSE, FALSE, FALSE, 1, TRUE
-.endproc
-
-.proc _lta_calc_batch_generic_buf3_long_y_offset
-    ; Params : first_column, last_column, first_row, last_row, ppu_buffer_index
-    _lta_calc_batch_macro FALSE, FALSE, FALSE, FALSE, 2, TRUE
-.endproc
-
 .macro calculate_batch_row_func_calls func1, func2, func3
     jsr func1
     .repeat 30
@@ -724,7 +709,7 @@ store_results_ptr = gol_ptr4
 
         .if use_long_y_offset
             calculate_batch_row_func_calls .ident(.sprintf("_lta_calc_batch_first_column_buf%d_long_y_offset", buffer_number)), \
-                                           .ident(.sprintf("_lta_calc_batch_generic_buf%d_long_y_offset", buffer_number)), \
+                                           .ident(.sprintf("_lta_calc_batch_generic_buf%d", buffer_number)), \
                                            .ident(.sprintf("_lta_calc_batch_last_column_buf%d_long_y_offset", buffer_number))
             jsr _lta_increment_pointers
         .else
