@@ -420,17 +420,12 @@ store_results_ptr = gol_ptr4
     optimized_read_of_lookup_table_ptr_hi
 
     ldx #0                                  ; New value for lookup_table_ptr is generated in 'X'.
-
     set_xreg_high_nibble_from_row_ptrs _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
-
-    sty column_index ; TODO : Figure out exact Y-value here so we can load it later instead of storing then loading it.
     ldy #0
-
     set_xreg_low_nibble_from_row_ptrs  _lta_last_row_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
-
     stx lookup_table_ptr
-    ldy column_index
-    iny
+
+    ldy #64
 
     load_lookup_results_and_store_to_grid 0
 .endproc
@@ -479,13 +474,11 @@ store_results_ptr = gol_ptr4
 
     ldx #0
     set_xreg_high_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_first_row_ptr
-    sty column_index    ; TODO : Figure out exact y-value so that we don't have to store then load.
     ldy #128
     set_xreg_low_nibble_from_row_ptrs  _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_first_row_ptr
     stx lookup_table_ptr
 
-    ldy column_index
-    iny
+    ldy #192
 
     load_lookup_results_and_store_to_grid 2
 .endproc
@@ -566,19 +559,19 @@ store_results_ptr = gol_ptr4
 
     ldx #0
     set_xreg_high_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
-
-    sty column_index    ; TODO : Figure out exact offset
-
     .if use_long_y_offset
         ldy #128
     .else
         ldy #0
     .endif
     set_xreg_low_nibble_from_row_ptrs _lta_row1_ptr, _lta_row2_ptr, _lta_row3_ptr, _lta_row4_ptr
-
     stx lookup_table_ptr
-    ldy column_index
-    iny
+
+    .if use_long_y_offset
+        ldy #192
+    .else
+        ldy #64
+    .endif
 
     load_lookup_results_and_store_to_grid ppu_buffer_index
 .endmacro
