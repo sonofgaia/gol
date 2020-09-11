@@ -37,12 +37,12 @@ _gamepad__p2_prev_state: .res 1
 ;; Saves the gamepad inputs to memory locations '_gamepad__p1_cur_state' and '_gamepad__p2_cur_state'.
 .proc _gamepad__save_inputs
     ; Save previously read values
-    write _gamepad__p1_prev_state, _gamepad__p1_cur_state
-    write _gamepad__p2_prev_state, _gamepad__p2_cur_state
+    mov _gamepad__p1_prev_state, _gamepad__p1_cur_state
+    mov _gamepad__p2_prev_state, _gamepad__p2_cur_state
 
     ; Reset the button latch
-    write GAMEPAD1, #1
-    write GAMEPAD1, #0
+    mov GAMEPAD1, #1
+    mov GAMEPAD1, #0
 
     read_gamepad_state GAMEPAD1, _gamepad__p1_cur_state
     read_gamepad_state GAMEPAD2, _gamepad__p2_cur_state

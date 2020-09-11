@@ -59,10 +59,10 @@ store_results_ptr = gol_ptr4
 
     decax #64
     stax _lta_row1_ptr             ; _lta_row1_ptr = _current_grid - 64
-    decax
+    decax                          ; Value to decrement by is already loaded in Y (64)
     stax _lta_first_row_ptr        ; This offset might seem odd for storing 'first row'.
                                    ; This is because when we calculate the last row and make use of this pointer,
-                                   ; we are using a long Y offset.
+                                   ; we are using a long Y offset (+128 bytes).
 
     ldax _current_grid
     incax                          ; Value to increment by is already loaded in Y (64)
@@ -670,7 +670,7 @@ store_results_ptr = gol_ptr4
 
 .proc _lta_display_next_generation
     ; Select the bank we will be switching on MMC3
-    write MMC3_BANK_SELECT, #bank_reg::BANK_REG_8K_PRG_0
+    mov MMC3_BANK_SELECT, #bank_reg::BANK_REG_8K_PRG_0
 
     jsr _lta_init                  ; Init life grid row pointers
 

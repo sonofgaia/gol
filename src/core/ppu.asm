@@ -31,12 +31,12 @@ _ppu_function_params: .res 2 ; Pass function params through this memory space.
 .segment "CODE"
 
 .proc _ppu_write_control_reg1
-    write PPU_CTRL1, _ppu_control_reg1
+    mov PPU_CTRL1, _ppu_control_reg1
     rts
 .endproc
 
 .proc _ppu_write_control_reg2
-    write PPU_CTRL2, _ppu_control_reg2
+    mov PPU_CTRL2, _ppu_control_reg2
     rts
 .endproc
 
@@ -153,8 +153,8 @@ nmi_ppu_write__read_from_buffer3:
 .proc _ppu_write_scroll_offsets
     bit PPU_STATUS
 
-    write PPU_SCROLL_OFFSETS, _ppu_x_scroll_offset
-    write PPU_SCROLL_OFFSETS, _ppu_y_scroll_offset
+    mov PPU_SCROLL_OFFSETS, _ppu_x_scroll_offset
+    mov PPU_SCROLL_OFFSETS, _ppu_y_scroll_offset
 
     rts
 .endproc
